@@ -1,7 +1,5 @@
-package com.ywh.jua.binchunk;
+package com.ywh.jua.chunk;
 
-import com.ywh.jua.chunk.BinaryChunk;
-import com.ywh.jua.chunk.Prototype;
 import org.junit.Test;
 
 import java.nio.file.Files;
@@ -9,6 +7,10 @@ import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author ywh
+ * @since 2020/8/17 11:26
+ */
 public class BinaryChunkTest {
 
     /**
