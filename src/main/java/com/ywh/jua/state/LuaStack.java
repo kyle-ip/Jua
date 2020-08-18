@@ -16,7 +16,7 @@ class LuaStack {
     /**
      * 自动扩容，无需判断是否有空闲
      *
-     * todo Lua 栈初始容量为 20，后续再调整
+     * TODO Lua 栈初始容量为 20，后续再调整
      */
     private final ArrayList<Object> slots = new ArrayList<>(20);
 
@@ -37,7 +37,7 @@ class LuaStack {
      */
     void push(Object val) {
 
-        // todo
+        // TODO
         if (slots.size() > 10000) {
             throw new StackOverflowError();
         }

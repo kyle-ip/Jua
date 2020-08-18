@@ -210,7 +210,7 @@ public class Prototype {
             case TAG_LONG_STR:
                 return BinaryChunk.getLuaString(buf);
             default:
-                // todo
+                // TODO
                 throw new RuntimeException("corrupted!");
         }
     }

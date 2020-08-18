@@ -1,5 +1,7 @@
 package com.ywh.jua.api;
 
+import com.ywh.jua.state.Arithmetic;
+
 /**
  * Lua （解释器）状态：Lua API 体现为一系列操作 LuaState 结构的函数。
  * 主要包括基础栈操纵方法、栈访问方法、压栈方法三类。
@@ -160,4 +162,44 @@ public interface LuaState {
 
     void pushString(String s);
 
+
+    /**
+     * 算数、按位运算：
+     * 依次弹出右操作数、左操作数，调用 {@link com.ywh.jua.state.Arithmetic #arith 执行计算 }；
+     * 如果操作符为取反、符号，则左右操作数为同一个。
+     *
+     * @param op
+     */
+    void arith(ArithOp op);
+
+    /**
+     * 比较运算：
+     * 比较栈中指定下标的两个元素
+     *
+     * @param idx1
+     * @param idx2
+     * @param op
+     * @return
+     */
+    boolean compare(int idx1, int idx2, CmpOp op);
+
+    /* miscellaneous functions */
+
+    /**
+     * 求长度：
+     * 取指定索引的值，求出其长度后推入栈顶。
+     *
+     * @param idx
+     */
+    void len(int idx);
+
+    /**
+     * 拼接：
+     * 从栈顶弹出 n 个值，对这些值进行拼接，再把结果推入栈顶。
+     * 当 n 为 0，则推入空串；
+     * 要求这 n 个值都是字符串。
+     *
+     * @param n
+     */
+    void concat(int n);
 }
