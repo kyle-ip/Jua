@@ -44,6 +44,8 @@ public class BinaryChunk {
 
     /**
      * 整数和 Lua 虚拟机指令宽度（5bytes），分别记录 cint、size_t、Lua 虚拟机指令、Lua 整数和 Lua 浮点数这 5 种数据类型在二进 chunk 里占用的字节数。
+     *
+     * 其中 size_t 在 32 位系统占 4 位，64 位系统占 8 位
      */
     private static final int CINT_SIZE = 4;
     private static final int CSIZET_SIZE = 8;
@@ -62,7 +64,7 @@ public class BinaryChunk {
     private static final double LUAC_NUM = 370.5;
 
     /**
-     * 用于解析二进制 chunk
+     * 解析二进制 chunk 为函数原型
      *
      * @param data
      * @return

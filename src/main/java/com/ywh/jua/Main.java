@@ -1,9 +1,14 @@
 package com.ywh.jua;
 
+import com.ywh.jua.api.LuaState;
+import com.ywh.jua.api.LuaType;
+import com.ywh.jua.api.LuaVM;
 import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.LocVar;
 import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
+import com.ywh.jua.state.LuaStateImpl;
+import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
 
 import java.nio.file.Files;
@@ -23,10 +28,65 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "C:\\Project\\other-project\\jua\\src\\test\\resources\\hello_world.luac";
+        String fileName = "G:\\demo\\jua\\src\\test\\resources\\sum.luac";
         byte[] data = Files.readAllBytes(Paths.get(fileName));
         Prototype proto = BinaryChunk.undump(data);
         list(proto);
+        luaMain(proto);
+    }
+
+    /**
+     * 从函数原型解析指令
+     *
+     * @param proto
+     */
+    private static void luaMain(Prototype proto) {
+        LuaVM vm = new LuaStateImpl(proto);
+        vm.setTop(proto.getMaxStackSize());
+        for (;;) {
+            int pc = vm.getPC();
+            int i = vm.fetch();
+            OpCode opCode = Instruction.getOpCode(i);
+            if (opCode != OpCode.RETURN && opCode.getAction() != null) {
+                opCode.getAction().execute(i, vm);
+                // 打印 PC 和指令名称
+                System.out.printf("[%02d] %-8s ", pc + 1, opCode.name());
+                // 打印栈
+                printStack(vm);
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
+     * 打印 Lua 栈
+     *
+     * @param ls
+     */
+    private static void printStack(LuaState ls) {
+        for (int i = 1; i <= ls.getTop(); i++) {
+            LuaType t = ls.type(i);
+            switch (t) {
+                case LUA_TBOOLEAN:
+                    System.out.printf("[%b]", ls.toBoolean(i));
+                    break;
+                case LUA_TNUMBER:
+                    if (ls.isInteger(i)) {
+                        System.out.printf("[%d]", ls.toInteger(i));
+                    } else {
+                        System.out.printf("[%f]", ls.toNumber(i));
+                    }
+                    break;
+                case LUA_TSTRING:
+                    System.out.printf("[\"%s\"]", ls.toString(i));
+                    break;
+                default: // other values
+                    System.out.printf("[%s]", ls.typeName(t));
+                    break;
+            }
+        }
+        System.out.println();
     }
 
     /**
@@ -41,6 +101,7 @@ public class Main {
         for (Prototype p : f.getProtos()) {
             list(p);
         }
+        System.out.println();
     }
 
     /**
@@ -51,9 +112,12 @@ public class Main {
     private static void printHeader(Prototype f) {
         String funcType = f.getLineDefined() > 0 ? "function" : "main";
         String varargFlag = f.getIsVararg() > 0 ? "+" : "";
-        System.out.printf("\n%s <%s:%d,%d> (%d instructions)\n", funcType, f.getSource(), f.getLineDefined(), f.getLastLineDefined(), f.getCode().length);
-        System.out.printf("%d%s params, %d slots, %d upvalues, ", f.getNumParams(), varargFlag, f.getMaxStackSize(), f.getUpvalues().length);
-        System.out.printf("%d locals, %d constants, %d functions\n", f.getLocVars().length, f.getConstants().length, f.getProtos().length);
+        System.out.printf("\n%s <%s:%d,%d> (%d instructions)\n", funcType, f.getSource(), f.getLineDefined(),
+            f.getLastLineDefined(), f.getCode().length);
+        System.out.printf("%d%s params, %d slots, %d upvalues, ", f.getNumParams(), varargFlag, f.getMaxStackSize(),
+            f.getUpvalues().length);
+        System.out.printf("%d locals, %d constants, %d functions\n", f.getLocVars().length, f.getConstants().length,
+            f.getProtos().length);
     }
 
     /**

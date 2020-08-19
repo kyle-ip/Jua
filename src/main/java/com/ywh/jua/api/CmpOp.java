@@ -22,6 +22,15 @@ public enum CmpOp {
      * <=
      */
     LUA_OPLE,
-    ;
 
+    /**
+     * <
+     */
+    LUA_OPGT,
+
+    /**
+     * <=
+     */
+    LUA_OPGE,
+    ;
 }

@@ -9,7 +9,7 @@ import static com.ywh.jua.api.ArithOp.LUA_OPUNM;
 import static com.ywh.jua.api.LuaType.*;
 
 /**
- * Lua 状态实现
+ * Lua State 实现
  *
  * @author ywh
  * @since 2020/8/18 11:26
@@ -21,12 +21,13 @@ public class LuaStateImpl implements LuaState, LuaVM {
     private Prototype proto;
 
     /**
-     * 程序计数器，记录当前执行的指令
+     * 程序计数器，记录当前执行的指令。
      */
     private int pc;
 
     public LuaStateImpl(Prototype proto) {
         this.proto = proto;
+//        this.pc = 0;
     }
 
     public LuaStateImpl() {
@@ -273,7 +274,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         return type(idx) == LUA_TFUNCTION;
     }
 
-    // ========== 转换索引位置的值的类型 ==========
+    // ========== 转换索引位置的值的类型并返回 ==========
 
     @Override
     public boolean toBoolean(int idx) {
@@ -390,6 +391,10 @@ public class LuaStateImpl implements LuaState, LuaVM {
                 return Comparison.lt(a, b);
             case LUA_OPLE:
                 return Comparison.le(a, b);
+            case LUA_OPGT:
+                return !Comparison.le(a, b);
+            case LUA_OPGE:
+                return !Comparison.lt(a, b);
             default:
                 throw new RuntimeException("invalid compare op!");
         }
@@ -445,33 +450,60 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
     }
 
+    /**
+     * 返回当前 PC
+     *
+     * @return
+     */
     @Override
     public int getPC() {
         return pc;
     }
 
+    /**
+     * 修改 PC（用于实现跳转指令）
+     *
+     * @param n
+     */
     @Override
     public void addPC(int n) {
         pc += n;
     }
 
+    /**
+     * （从指令表）取出当前指令（将 PC 指向下一条指令）
+     *
+     * @return
+     */
     @Override
     public int fetch() {
         return proto.getCode()[pc++];
     }
 
+    /**
+     * （从常量表取出一个常量值）将指定常量推入栈顶
+     *
+     * @param idx
+     */
     @Override
     public void getConst(int idx) {
         stack.push(proto.getConstants()[idx]);
     }
 
+    /**
+     * 将指定常量或栈值推入栈顶
+     * 其中 rk 为 iABC 模式指令里的 OpArgK 类型参数。
+     *
+     * @param rk
+     */
     @Override
     public void getRK(int rk) {
-
         // constant
         if (rk > 0xFF) {
             getConst(rk & 0xFF);
-        } else { // register
+        }
+        // register
+        else {
             pushValue(rk + 1);
         }
     }

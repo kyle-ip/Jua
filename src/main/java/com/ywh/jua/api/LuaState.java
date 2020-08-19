@@ -3,7 +3,7 @@ package com.ywh.jua.api;
 import com.ywh.jua.state.Arithmetic;
 
 /**
- * Lua （解释器）状态：Lua API 体现为一系列操作 LuaState 结构的函数。
+ * Lua（解释器）状态：Lua API 体现为一系列操作 LuaState 结构的函数。
  * 主要包括基础栈操纵方法、栈访问方法、压栈方法三类。
  *
  * @author ywh
