@@ -17,6 +17,10 @@ import static com.ywh.jua.api.LuaType.*;
  */
 public class Instructions {
 
+
+    /* number of list items to accumulate before a SETLIST instruction */
+    public static final int LFIELDS_PER_FLUSH = 50;
+
     /* ========== 移动和跳转指令（misc）========== */
 
     /**
@@ -595,4 +599,111 @@ public class Instructions {
         }
     }
 
+
+
+    /* ========== 表指令（for）========== */
+
+    /**
+     * NEWTABLE 指令（iABC 模式）
+     * 创建空表，将其放入指定寄存器。
+     *
+     * R(A) := {} (size = B,C)
+     *
+     * @param i
+     * @param vm
+     */
+    public static void newTable(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+
+        // 数组初始容量
+        int b = Instruction.getB(i);
+
+        // 哈希表初始容量
+        int c = Instruction.getC(i);
+
+        // NEWTABLE 指令是 iABC 模式，操作数 B 和 C 只有 9bits，如果当作无符号整数使用，最大不超过 512。
+        // 如果表初始容量不够大，会导致表频繁扩容影相数据加载效率。
+        // 因此操作数 B 和 C 采用浮点字节编码
+        vm.createTable(FPB.fb2int(b), FPB.fb2int(c));
+        vm.replace(a);
+    }
+
+    /**
+     * GETTABLE 指令（iABC 模式）
+     * 根据键从表里取值，并放入目标寄存器中。
+     *
+     * R(A) := R(B)[RK(C)]
+     *
+     * @param i
+     * @param vm
+     */
+    public static void getTable(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+
+        // 表索引（寄存器中）
+        int b = Instruction.getB(i) + 1;
+
+        // 键索引（寄存器或常量表中）
+        int c = Instruction.getC(i);
+        vm.getRK(c);
+        vm.getTable(b);
+        vm.replace(a);
+    }
+
+    /**
+     * SETTABLE 指令（iABC 模式）
+     * 根据键往表里赋值。
+     * 通用指令，每次只处理一个键值对，具体操作交给表处理，不关心实际写入的是哈希表还是数组部分。
+     *
+     * R(A)[RK(B)] := RK(C)
+     *
+     * @param i
+     * @param vm
+     */
+    public static void setTable(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+
+        // 键和值可能存在于寄存器或常量表中，索引由操作数 B、C 指定。
+        int b = Instruction.getB(i);
+        int c = Instruction.getC(i);
+        vm.getRK(b);
+        vm.getRK(c);
+        vm.setTable(a);
+    }
+
+    /**
+     * SETLIST 指令（iABC 模式）
+     * 为数组准备，用于按索引批量设置数组元素。
+     *
+     *
+     * R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
+     *
+     * @param i
+     * @param vm
+     */
+    public static void setList(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+
+        // 需要写入数组的一系列值（于寄存器中，紧挨着数组）的数量
+        int b = Instruction.getB(i);
+
+        // 数组起始索引（需要换算）
+        int c = Instruction.getC(i);
+
+        // C 操作数只有 9bits，直接用于表示数组索引不够用。
+        // 因此 C 操作数表示的是批次数，批次数 * 批大小（默认 50）计算出数组起始索引，可扩展到可 50 * 2 ^ 9 == 25600。
+        // 因此数组的起始索引必然是批次数 LFIELDS_PER_FLUSH 的整数倍。
+        // 对于数组索引大于 25600 的情况，SETLIST 指令后跟着一条 EXTRAARG 指令，用 Ax 操作数表示批次数。
+
+        // C 操作数大于 0 则批次数 + 1，否则真正的批次数存放在下一条指令（EXTRAARG）中。
+        c = c > 0 ? c - 1 : Instruction.getAx(vm.fetch());
+        vm.checkStack(1);
+
+        int idx = c * LFIELDS_PER_FLUSH;
+        for (int j = 1; j <= b; j++) {
+            idx++;
+            vm.pushValue(a + j);
+            vm.setI(a, idx);
+        }
+    }
 }

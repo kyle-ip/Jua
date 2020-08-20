@@ -44,8 +44,8 @@ public class Main {
         LuaVM vm = new LuaStateImpl(proto);
         vm.setTop(proto.getMaxStackSize());
         for (;;) {
-            int pc = vm.getPC();
-            int i = vm.fetch();
+            // 取程序计数器、下一条指令
+            int pc = vm.getPC(), i = vm.fetch();
             OpCode opCode = Instruction.getOpCode(i);
             if (opCode != OpCode.RETURN && opCode.getAction() != null) {
                 opCode.getAction().execute(i, vm);

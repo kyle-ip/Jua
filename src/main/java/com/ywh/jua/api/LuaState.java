@@ -183,6 +183,64 @@ public interface LuaState {
      */
     boolean compare(int idx1, int idx2, CmpOp op);
 
+
+    /**
+     *
+     */
+    void newTable();
+
+    /**
+     *
+     * @param nArr
+     * @param nRec
+     */
+    void createTable(int nArr, int nRec);
+
+    /**
+     *
+     * @param idx
+     * @return
+     */
+    LuaType getTable(int idx);
+
+    /**
+     *
+     * @param idx
+     * @param k
+     * @return
+     */
+    LuaType getField(int idx, String k);
+
+    /**
+     *
+     * @param idx
+     * @param i
+     * @return
+     */
+    LuaType getI(int idx, long i);
+
+    /* set functions (stack -> Lua) */
+
+    /**
+     *
+     * @param idx
+     */
+    void setTable(int idx);
+
+    /**
+     *
+     * @param idx
+     * @param k
+     */
+    void setField(int idx, String k);
+
+    /**
+     *
+     * @param idx
+     * @param i
+     */
+    void setI(int idx, long i);
+
     /* miscellaneous functions */
 
     /**

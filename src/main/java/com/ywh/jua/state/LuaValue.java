@@ -23,7 +23,10 @@ class LuaValue {
             return LUA_TNUMBER;
         } else if (val instanceof String) {
             return LUA_TSTRING;
-        } else {
+        } else if (val instanceof LuaTable) {
+            return LUA_TTABLE;
+        }
+        else {
             throw new RuntimeException("TODO");
         }
     }

@@ -400,6 +400,130 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
     }
 
+
+    /**
+     * 创建空表，将其推入栈顶。
+     */
+    @Override
+    public void newTable() {
+        createTable(0, 0);
+    }
+
+    /**
+     * 创建空表（指定数组和哈希表的初始容量），将其推入栈顶。
+     *
+     * @param nArr
+     * @param nRec
+     */
+    @Override
+    public void createTable(int nArr, int nRec) {
+        stack.push(new LuaTable(nArr, nRec));
+    }
+
+    /**
+     * 根据索引从栈中取表，再根据从栈顶弹出的键取值（并将其推入栈顶）。
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public LuaType getTable(int idx) {
+        Object t = stack.get(idx);
+        Object k = stack.pop();
+        return getTable(t, k);
+    }
+
+    /**
+     * {@link #getTable}，键为字符串。
+     *
+     * @param idx
+     * @param k
+     * @return
+     */
+    @Override
+    public LuaType getField(int idx, String k) {
+        Object t = stack.get(idx);
+        return getTable(t, k);
+    }
+
+    /**
+     * {@link #getTable}，键为整数。
+     *
+     * @param idx
+     * @param i
+     * @return
+     */
+    @Override
+    public LuaType getI(int idx, long i) {
+        Object t = stack.get(idx);
+        return getTable(t, i);
+    }
+
+    /**
+     * 从指定表中根据指定键取出值（并将其推入栈顶）。
+     *
+     * @param t
+     * @param k
+     * @return
+     */
+    private LuaType getTable(Object t, Object k) {
+        if (t instanceof LuaTable) {
+            Object v = ((LuaTable) t).get(k);
+            stack.push(v);
+            return LuaValue.typeOf(v);
+        }
+        throw new RuntimeException("not a table!"); // todo
+    }
+
+    /* set functions (stack -> Lua) */
+
+    /**
+     * 根据索引取出指定的表，从栈中先后弹出值、键，把键值对设置到表中。
+     *
+     * @param idx
+     */
+    @Override
+    public void setTable(int idx) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        Object k = stack.pop();
+        setTable(t, k, v);
+    }
+
+    /**
+     * 根据索引取出指定的表，从栈中弹出值，把键值对设置到表中（字符串）。
+     *
+     * @param idx
+     * @param k
+     */
+    @Override
+    public void setField(int idx, String k) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        setTable(t, k, v);
+    }
+
+    /**
+     * 根据索引取出指定的表，从栈中弹出值，把键值对设置到表中（整数）。
+     *
+     * @param idx
+     * @param i
+     */
+    @Override
+    public void setI(int idx, long i) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        setTable(t, i, v);
+    }
+
+    private void setTable(Object t, Object k, Object v) {
+        if (t instanceof LuaTable) {
+            ((LuaTable) t).put(k, v);
+            return;
+        }
+        throw new RuntimeException("not a table!");
+    }
+
     /* miscellaneous functions */
 
     /**
@@ -413,6 +537,8 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object val = stack.get(idx);
         if (val instanceof String) {
             pushInteger(((String) val).length());
+        } else if (val instanceof LuaTable) {
+            pushInteger(((LuaTable) val).length());
         } else {
             throw new RuntimeException("length error!");
         }
@@ -498,12 +624,12 @@ public class LuaStateImpl implements LuaState, LuaVM {
      */
     @Override
     public void getRK(int rk) {
-        // constant
+
         if (rk > 0xFF) {
+            // constant
             getConst(rk & 0xFF);
-        }
-        // register
-        else {
+        } else {
+            // register
             pushValue(rk + 1);
         }
     }

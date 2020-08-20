@@ -8,7 +8,9 @@ import static com.ywh.jua.vm.OpMode.*;
  * 指令分派
  *
  * 操作码：用于识别指令，由于用 6bits 表示，因此最多共 64 条（Lua 5.3 定义了 0 ~ 46）。
- * 指令表：Lua 官方实现把每一条指令的基本信息（编码模式、是否设置寄存器 A、操作数 B 和 C 的使用类型等）编码为一个字节。
+ * 指令表：Lua 官方实现把每一条指令的基本信息编码为一个字节。
+ *
+ * 此处记录存放指令名称、是否 TEST 指令、是否设置寄存器 A、操作数 B 和 C 的类型、编码模式、指令函数的映射关系。
  *
  * @author ywh
  * @since 2020/8/17 11:26
@@ -55,7 +57,7 @@ public enum OpCode {
     /**
      * R(A) := R(B)[RK(C)]
      */
-    GETTABLE(0, 1, OpArgR, OpArgK, iABC, null),
+    GETTABLE(0, 1, OpArgR, OpArgK, iABC, Instructions::getTable),
 
     /**
      * UpValue[A][RK(B)] := RK(C)
@@ -70,12 +72,12 @@ public enum OpCode {
     /**
      * R(A)[RK(B)] := RK(C)
      */
-    SETTABLE(0, 0, OpArgK, OpArgK, iABC, null),
+    SETTABLE(0, 0, OpArgK, OpArgK, iABC, Instructions::setTable),
 
     /**
      * R(A) := {} (size = B,C)
      */
-    NEWTABLE(0, 1, OpArgU, OpArgU, iABC, null),
+    NEWTABLE(0, 1, OpArgU, OpArgU, iABC, Instructions::newTable),
 
     /**
      * R(A+1) := R(B); R(A) := R(B)[RK(C)]
@@ -235,7 +237,7 @@ public enum OpCode {
     /**
      * R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
      */
-    SETLIST(0, 0, OpArgU, OpArgU, iABC, null),
+    SETLIST(0, 0, OpArgU, OpArgU, iABC, Instructions::setList),
 
     /**
      * R(A) := closure(KPROTO[Bx])
@@ -251,6 +253,8 @@ public enum OpCode {
      * extra (larger) argument for previous opcode
      */
     EXTRAARG(0, 0, OpArgU, OpArgU, iAx, null),
+
+
     ;
 
     /**
