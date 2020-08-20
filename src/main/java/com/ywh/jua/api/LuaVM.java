@@ -11,12 +11,6 @@ public interface LuaVM extends LuaState {
 
     /**
      *
-     * @return
-     */
-    int getPC();
-
-    /**
-     *
      * @param n
      */
     void addPC(int n);
@@ -39,4 +33,21 @@ public interface LuaVM extends LuaState {
      */
     void getRK(int rk);
 
+    /**
+     *
+     * @return
+     */
+    int registerCount();
+
+    /**
+     *
+     * @param n
+     */
+    void loadVararg(int n);
+
+    /**
+     *
+     * @param idx
+     */
+    void loadProto(int idx);
 }

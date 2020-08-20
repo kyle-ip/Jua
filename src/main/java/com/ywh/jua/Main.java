@@ -28,36 +28,43 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "G:\\demo\\jua\\src\\test\\resources\\sum.luac";
+        String fileName = "G:\\demo\\jua\\src\\test\\resources\\test.luac";
         byte[] data = Files.readAllBytes(Paths.get(fileName));
         Prototype proto = BinaryChunk.undump(data);
         list(proto);
-        luaMain(proto);
+
+        LuaState ls = new LuaStateImpl();
+        ls.load(data, fileName, "b");
+        ls.call(0, 0);
     }
 
-    /**
-     * 从函数原型解析指令
-     *
-     * @param proto
-     */
-    private static void luaMain(Prototype proto) {
-        LuaVM vm = new LuaStateImpl(proto);
-        vm.setTop(proto.getMaxStackSize());
-        for (;;) {
-            // 取程序计数器、下一条指令
-            int pc = vm.getPC(), i = vm.fetch();
-            OpCode opCode = Instruction.getOpCode(i);
-            if (opCode != OpCode.RETURN && opCode.getAction() != null) {
-                opCode.getAction().execute(i, vm);
-                // 打印 PC 和指令名称
-                System.out.printf("[%02d] %-8s ", pc + 1, opCode.name());
-                // 打印栈
-                printStack(vm);
-            } else {
-                break;
-            }
-        }
+    private static void loadMain() {
+
     }
+
+//    /**
+//     * 从函数原型解析指令
+//     *
+//     * @param proto
+//     */
+//    private static void luaMain(Prototype proto) {
+//        LuaVM vm = new LuaStateImpl(proto);
+//        vm.setTop(proto.getMaxStackSize());
+//        for (;;) {
+//            // 取程序计数器、下一条指令
+//            int pc = vm.getPC(), i = vm.fetch();
+//            OpCode opCode = Instruction.getOpCode(i);
+//            if (opCode != OpCode.RETURN && opCode.getAction() != null) {
+//                opCode.getAction().execute(i, vm);
+//                // 打印 PC 和指令名称
+//                System.out.printf("[%02d] %-8s ", pc + 1, opCode.name());
+//                // 打印栈
+//                printStack(vm);
+//            } else {
+//                break;
+//            }
+//        }
+//    }
 
     /**
      * 打印 Lua 栈

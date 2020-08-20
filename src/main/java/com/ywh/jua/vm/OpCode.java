@@ -82,7 +82,7 @@ public enum OpCode {
     /**
      * R(A+1) := R(B); R(A) := R(B)[RK(C)]
      */
-    SELF(0, 1, OpArgR, OpArgK, iABC, null),
+    SELF(0, 1, OpArgR, OpArgK, iABC, Instructions::self),
 
     /**
      * R(A) := RK(B) + RK(C)
@@ -202,17 +202,17 @@ public enum OpCode {
     /**
      * R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
      */
-    CALL(0, 1, OpArgU, OpArgU, iABC, null),
+    CALL(0, 1, OpArgU, OpArgU, iABC, Instructions::call),
 
     /**
      * return R(A)(R(A+1), ... ,R(A+B-1))
      */
-    TAILCALL(0, 1, OpArgU, OpArgU, iABC, null),
+    TAILCALL(0, 1, OpArgU, OpArgU, iABC, Instructions::tailCall),
 
     /**
      * return R(A), ... ,R(A+B-2)
      */
-    RETURN(0, 0, OpArgU, OpArgN, iABC, null),
+    RETURN(0, 0, OpArgU, OpArgN, iABC, Instructions::_return),
 
     /**
      * R(A)+=R(A+2); if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }
@@ -242,12 +242,12 @@ public enum OpCode {
     /**
      * R(A) := closure(KPROTO[Bx])
      */
-    CLOSURE(0, 1, OpArgU, OpArgN, iABx, null),
+    CLOSURE(0, 1, OpArgU, OpArgN, iABx, Instructions::closure),
 
     /**
      * R(A), R(A+1), ..., R(A+B-2) = vararg
      */
-    VARARG(0, 1, OpArgU, OpArgN, iABC, null),
+    VARARG(0, 1, OpArgU, OpArgN, iABC, Instructions::vararg),
 
     /**
      * extra (larger) argument for previous opcode

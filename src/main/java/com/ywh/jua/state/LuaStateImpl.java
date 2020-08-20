@@ -2,11 +2,18 @@ package com.ywh.jua.state;
 
 
 import com.ywh.jua.api.*;
+import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.Prototype;
+import com.ywh.jua.vm.Instruction;
+import com.ywh.jua.vm.OpCode;
+
+import java.util.Collections;
+import java.util.List;
 
 import static com.ywh.jua.api.ArithOp.LUA_OPBNOT;
 import static com.ywh.jua.api.ArithOp.LUA_OPUNM;
 import static com.ywh.jua.api.LuaType.*;
+import static com.ywh.jua.api.ThreadStatus.LUA_OK;
 
 /**
  * Lua State 实现
@@ -16,22 +23,32 @@ import static com.ywh.jua.api.LuaType.*;
  */
 public class LuaStateImpl implements LuaState, LuaVM {
 
-    private LuaStack stack = new LuaStack();
+    /**
+     * 使用单向链表实现函数调用栈，头部是栈顶，尾部是栈底。
+     * 入栈即在链表头部插入一个节点，让这个节点成为新的头部。
+     */
+    private LuaStack stack = new LuaStack(20);
 
-    private Prototype proto;
+    // ========== Call Stack ==========
 
     /**
-     * 程序计数器，记录当前执行的指令。
+     * 调用帧入栈
+     *
+     * @param newTop
      */
-    private int pc;
-
-    public LuaStateImpl(Prototype proto) {
-        this.proto = proto;
-//        this.pc = 0;
+    private void pushLuaStack(LuaStack newTop) {
+        // 推入一个栈帧，即将其 prev 指针指向当前的栈，并把当前的栈指针重置为新的栈帧。
+        newTop.prev = this.stack;
+        this.stack = newTop;
     }
 
-    public LuaStateImpl() {
-        proto = null;
+    /**
+     * 调用帧出栈
+     */
+    private void popLuaStack() {
+        LuaStack top = this.stack;
+        this.stack = top.prev;
+        top.prev = null;
     }
 
     /**
@@ -524,6 +541,119 @@ public class LuaStateImpl implements LuaState, LuaVM {
         throw new RuntimeException("not a table!");
     }
 
+    /**
+     * 加载二进制 chunk 或 Lua 脚本，把主函数原型实例化为闭包并推入栈顶。
+     * 
+     * 通过参数 mode（可选 “b”、“t”、“bt”）选定加载模式：
+     * b：如果加载二进制 chunk，则只需读文件、解析函数原型、实例化为闭包、推入栈顶；
+     * t：如果加载文本 Lua 脚本，则先进行编译。
+     * bt：都可以，根据实际情况处理。
+     * 
+     * 如果 load 方法无法加载 chunk，则要在栈顶留下一条错误消息。
+     * 返回一个状态码，0 表示成功，其他表示失败。
+     *
+     * @param chunk
+     * @param chunkName
+     * @param mode
+     * @return
+     */
+    @Override
+    public ThreadStatus load(byte[] chunk, String chunkName, String mode) {
+
+        // 解析字节数组为函数原型。
+        Prototype proto = BinaryChunk.undump(chunk);
+
+        // 把实例化为闭包的函数原型推入栈顶。
+        stack.push(new Closure(proto));
+
+        // TODO 状态码
+        return LUA_OK;
+    }
+
+    /**
+     * 调用 Lua 函数
+     * 在执行之前，必须先把被调用函数入栈，然后把参数值依次入栈；
+     * call 方法调用结束后，参数值和函数会被弹出，取而代之的是指定数量的返回值。
+     * 
+     * 接收两个参数，其一是准备传递给被调用函数的参数数量（同时隐含给出被调用函数在栈中的位置）；
+     * 其二是需要的返回值数量（多退少补），-1 表示返回值全部留在栈顶。
+     *
+     * @param nArgs
+     * @param nResults
+     */
+    @Override
+    public void call(int nArgs, int nResults) {
+
+        // 取出被调用函数
+        Object val = stack.get(-(nArgs + 1));
+        if (val instanceof Closure) {
+            Closure c = (Closure) val;
+            System.out.printf("call %s<%d,%d>\n", c.proto.getSource(), c.proto.getLineDefined(), c.proto.getLastLineDefined());
+            // 执行调用
+            callLuaClosure(nArgs, nResults, c);
+        } else {
+            throw new RuntimeException("not function!");
+        }
+    }
+
+    /**
+     * 执行被调用函数
+     *
+     * @param nArgs
+     * @param nResults
+     * @param c
+     */
+    private void callLuaClosure(int nArgs, int nResults, Closure c) {
+
+        // 从函数原型取出执行函数需要的寄存器数量、声明的固定参数数量以及是否 vararg 函数。
+        int nRegs = c.proto.getMaxStackSize();
+        int nParams = c.proto.getNumParams();
+        boolean isVararg = c.proto.getIsVararg() == 1;
+
+        // 创建调用帧（适当扩大，为指令实现函数预留少量栈空间），指定闭包。
+        LuaStack newStack = new LuaStack(nRegs + 20);
+        newStack.closure = c;
+
+        // 把函数和参数值从旧帧弹出。
+        List<Object> funcAndArgs = stack.popN(nArgs + 1);
+
+        // 按照固定参数数量，把参数传入新帧。
+        // 如果被调用函数是 vararg 参数，且传入参数的数量多余固定参数数量，需要把 vararg 参数记录。
+        newStack.pushN(funcAndArgs.subList(1, funcAndArgs.size()), nParams);
+        if (nArgs > nParams && isVararg) {
+            newStack.varargs = funcAndArgs.subList(nParams + 1, funcAndArgs.size());
+        }
+
+        // 新帧入栈（新设置“当前帧”），超出 nRegs 部分为溢出。
+        pushLuaStack(newStack);
+        setTop(nRegs);
+
+        // 执行被调用函数的指令，调用完成后弹出（恢复“当前帧”）。
+        runLuaClosure();
+        popLuaStack();
+
+        // 如果有返回值，则从刚才弹出的帧中获取，并放入当前帧。
+        if (nResults != 0) {
+            List<Object> results = newStack.popN(newStack.top() - nRegs);
+            //stack.check(results.size())
+            stack.pushN(results, nResults);
+        }
+    }
+
+    /**
+     * 逐条执行被调用函数的指令，直到遇到 RETUR 指令。
+     */
+    private void runLuaClosure() {
+        for (;;) {
+            int i = fetch();
+            OpCode opCode = Instruction.getOpCode(i);
+            opCode.getAction().execute(i, this);
+            if (opCode == OpCode.RETURN) {
+                break;
+            }
+        }
+    }
+
     /* miscellaneous functions */
 
     /**
@@ -554,37 +684,22 @@ public class LuaStateImpl implements LuaState, LuaVM {
      */
     @Override
     public void concat(int n) {
-        if (n < 0) {
-            throw new RuntimeException("n error!");
-        }
         if (n == 0) {
             stack.push("");
-            return;
-        }
-        if (n == 1) {
-            return;
-        }
-        for (int i = 1; i < n; i++) {
-            if (isString(-1) && isString(-2)) {
-                String s2 = toString(-1);
-                String s1 = toString(-2);
-                pop(2);
-                pushString(s1 + s2);
-                continue;
+        } else if (n >= 2) {
+            for (int i = 1; i < n; i++) {
+                if (isString(-1) && isString(-2)) {
+                    String s2 = toString(-1);
+                    String s1 = toString(-2);
+                    pop(2);
+                    pushString(s1 + s2);
+                    continue;
+                }
+                throw new RuntimeException("concatenation error!");
             }
-            throw new RuntimeException("concatenation error!");
         }
     }
 
-    /**
-     * 返回当前 PC
-     *
-     * @return
-     */
-    @Override
-    public int getPC() {
-        return pc;
-    }
 
     /**
      * 修改 PC（用于实现跳转指令）
@@ -593,7 +708,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      */
     @Override
     public void addPC(int n) {
-        pc += n;
+        stack.pc += n;
     }
 
     /**
@@ -603,7 +718,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      */
     @Override
     public int fetch() {
-        return proto.getCode()[pc++];
+        return stack.closure.proto.getCode()[stack.pc++];
     }
 
     /**
@@ -613,7 +728,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      */
     @Override
     public void getConst(int idx) {
-        stack.push(proto.getConstants()[idx]);
+        stack.push(stack.closure.proto.getConstants()[idx]);
     }
 
     /**
@@ -632,5 +747,42 @@ public class LuaStateImpl implements LuaState, LuaVM {
             // register
             pushValue(rk + 1);
         }
+    }
+
+    /**
+     * 返回当前寄存器数量（栈深度）
+     *
+     * @return
+     */
+    @Override
+    public int registerCount() {
+        return stack.closure.proto.getMaxStackSize();
+    }
+
+    /**
+     * 把 n 个变长参数推入栈顶（多退少补）。
+     *
+     * @param n
+     */
+    @Override
+    public void loadVararg(int n) {
+        List<Object> varargs = stack.varargs != null ? stack.varargs : Collections.emptyList();
+        if (n < 0) {
+            n = varargs.size();
+        }
+
+        //stack.check(n)
+        stack.pushN(varargs, n);
+    }
+
+    /**
+     * 读取指定的子函数原型，封装为闭包后推入栈顶。
+     *
+     * @param idx
+     */
+    @Override
+    public void loadProto(int idx) {
+        Prototype proto = stack.closure.proto.getProtos()[idx];
+        stack.push(new Closure(proto));
     }
 }

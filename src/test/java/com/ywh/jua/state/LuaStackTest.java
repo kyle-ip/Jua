@@ -16,7 +16,7 @@ public class LuaStackTest {
 
     @Before
     public void initStack() {
-        stack = new LuaStack();
+        stack = new LuaStack(20);
         stack.push(1);
         stack.push(true);
         stack.push("foo");

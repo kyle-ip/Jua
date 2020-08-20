@@ -241,6 +241,10 @@ public interface LuaState {
      */
     void setI(int idx, long i);
 
+    ThreadStatus load(byte[] chunk, String chunkName, String mode);
+
+    void call(int nArgs, int nResults);
+
     /* miscellaneous functions */
 
     /**
