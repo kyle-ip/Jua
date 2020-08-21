@@ -7,9 +7,8 @@ import java.util.Arrays;
 /**
  *
  * chunk 格式（包括 Lua 虚拟机指令）属于 Lua 虚拟机内部实现细节，并没标准化，以官方源码为准；
- * chunk 没有考虑跨平台需求，对于需要使用超过一个字节表示的数据，必须要考虑大小端（Endianness）问题；
- * chunk 格式的设计没有考虑不同 Lua 版本之间的兼容问题；
- * chunk 格式主要是为了获得更好的运行速度，并没有被刻意设计得很紧凑（因此编译后可能会比文本形式的源文件更大）。
+ * 由于没有考虑跨平台需求，对于需要使用超过一个字节表示的数据，必须要考虑大小端（Endianness）问题；
+ * chunk 格式的设计没有考虑不同 Lua 版本之间的兼容问题，而且没有被刻意设计得很紧凑（因此编译后可能会比文本形式的源文件更大），只是为了获得更好的运行速度。
  *
  * chunk 内部使用的数据类型大致可以分为数值、字符串和列表：
  *      数值：即字节、C 整型、C size_t、Lua 整型、Lua 浮点型，都按照固定长度存储，除了字节以外其他都占用多个字节，占用个数记录在头部；
@@ -21,13 +20,15 @@ import java.util.Arrays;
  */
 public class BinaryChunk {
 
+    // ========== chunk 头部信息 ==========
+
     /**
      * 签名（4bytes），即魔数，用于快速识别文件格式。
      */
     private static final byte[] LUA_SIGNATURE = {0x1b, 'L', 'u', 'a'};
 
     /**
-     * 版本号（1byte），如 5.3.4 表示大版本号 5、小版本号 3，发布号 4（不被考虑）。
+     * 版本号（1byte），如 5.3.4 表示大版本号 5、小版本号 3，发布号 4（不用管）。
      */
     private static final int LUAC_VERSION = 0x53;
 
@@ -64,7 +65,7 @@ public class BinaryChunk {
     private static final double LUAC_NUM = 370.5;
 
     /**
-     * 解析二进制 chunk 为函数原型
+     * 解析二进制 chunk 为函数原型。
      *
      * @param data
      * @return
@@ -72,7 +73,8 @@ public class BinaryChunk {
     public static Prototype undump(byte[] data) {
         ByteBuffer buf = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
         checkHead(buf);
-        buf.get(); // size_upvalues
+        // size_upvalues
+        buf.get();
         Prototype mainFunc = new Prototype();
         mainFunc.read(buf, "");
         return mainFunc;
@@ -80,42 +82,63 @@ public class BinaryChunk {
 
 
     /**
-     * 校验头部，即依次检查含签名 本号、 式号、各种整数类型占用 字节数，以及大 端和浮点数格式识别信息等
+     * 校验头部，即依次检查含签名、版本号、格式号、各种整数类型占用的字节数，以及大小端和浮点数格式识别信息等。
      *
      * @param buf
      */
     private static void checkHead(ByteBuffer buf) {
+
+        // 签名
         if (!Arrays.equals(LUA_SIGNATURE, getBytes(buf, 4))) {
             throw new RuntimeException("not a precompiled chunk!");
         }
+
+        // 版本号
         if (buf.get() != LUAC_VERSION) {
             throw new RuntimeException("version mismatch!");
         }
+
+        // 格式号
         if (buf.get() != LUAC_FORMAT) {
             throw new RuntimeException("format mismatch!");
         }
 
+        // LUAC_DATA
         if (!Arrays.equals(LUAC_DATA, getBytes(buf, 6))) {
             throw new RuntimeException("corrupted!");
         }
+
+        // C int 长度
         if (buf.get() != CINT_SIZE) {
             throw new RuntimeException("int size mismatch!");
         }
+
+        // C size_t 长度
         if (buf.get() != CSIZET_SIZE) {
             throw new RuntimeException("size_t size mismatch!");
         }
+
+        // Lua 虚拟机指令长度
         if (buf.get() != INSTRUCTION_SIZE) {
             throw new RuntimeException("instruction size mismatch!");
         }
+
+        // Lua 整数长度
         if (buf.get() != LUA_INTEGER_SIZE) {
             throw new RuntimeException("lua_Integer size mismatch!");
         }
+
+        // Lua 浮点数长度
         if (buf.get() != LUA_NUMBER_SIZE) {
             throw new RuntimeException("lua_Number size mismatch!");
         }
+
+        // 整数 0x5678
         if (buf.getLong() != LUAC_INT) {
             throw new RuntimeException("endianness mismatch!");
         }
+
+        // 浮点数 370.5
         if (buf.getDouble() != LUAC_NUM) {
             throw new RuntimeException("float format mismatch!");
         }

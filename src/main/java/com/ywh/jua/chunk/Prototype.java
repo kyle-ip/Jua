@@ -148,21 +148,45 @@ public class Prototype {
      * @param parentSource
      */
     void read(ByteBuffer buf, String parentSource) {
+
+        // 函数来源
         source = BinaryChunk.getLuaString(buf);
         if (source.isEmpty()) {
             source = parentSource;
         }
+
+        // 起止行号
         lineDefined = buf.getInt();
         lastLineDefined = buf.getInt();
+
+        // 固定参数个数
         numParams = buf.get();
+
+        // 是否带变长参数
         isVararg = buf.get();
+
+        // 寄存器数量
         maxStackSize = buf.get();
+
+        // 指令表
         readCode(buf);
+
+        // 常量表
         readConstants(buf);
+
+        // Upvalue 表
         readUpvalues(buf);
+
+        // 子函数原型
         readProtos(buf, source);
+
+        // 行号表
         readLineInfo(buf);
+
+        // 局部变量表
         readLocVars(buf);
+
+        // Upvalue 名列表
         readUpvalueNames(buf);
     }
 

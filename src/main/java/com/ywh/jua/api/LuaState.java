@@ -204,7 +204,6 @@ public interface LuaState {
      */
     boolean compare(int idx1, int idx2, CmpOp op);
 
-
     /**
      *
      */
