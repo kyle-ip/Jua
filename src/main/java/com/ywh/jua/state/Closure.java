@@ -15,14 +15,18 @@ public class Closure {
 
     final JavaFunction javaFunc;
 
+    final UpvalueHolder[] upvals;
+
     Closure(Prototype proto) {
         this.proto = proto;
         this.javaFunc = null;
+        this.upvals = new UpvalueHolder[proto.getUpvalues().length];
     }
 
-    Closure(JavaFunction javaFunc) {
+    Closure(JavaFunction javaFunc, int nUpvals) {
         this.proto = null;
         this.javaFunc = javaFunc;
+        this.upvals = new UpvalueHolder[nUpvals];
     }
 
 

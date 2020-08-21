@@ -579,13 +579,21 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public ThreadStatus load(byte[] chunk, String chunkName, String mode) {
 
+        // TODO
         // 解析字节数组为函数原型。
-        Prototype proto = BinaryChunk.undump(chunk);
-
         // 把实例化为闭包的函数原型推入栈顶。
-        stack.push(new Closure(proto));
+        Prototype proto = BinaryChunk.undump(chunk);
+        Closure closure = new Closure(proto);
+        stack.push(closure);
 
-        // TODO 状态码
+        // 判断闭包是否需要 Upvalue
+        if (proto.getUpvalues().length > 0) {
+            Object env = registry.get(LUA_RIDX_GLOBALS);
+
+            // 第一个 Upvalue（对于主函数来说是 _ENV）会被初始化为全局环境，其他得 Upvalue 会被初始化成 nil。
+            // 由于 Upvalue 的初始值为 nil，所以只要把第一个 Upvalue 值设置成全局环境即可。
+            closure.upvals[0] = new UpvalueHolder(env);
+        }
         return LUA_OK;
     }
 
@@ -872,11 +880,21 @@ public class LuaStateImpl implements LuaState, LuaVM {
      */
     @Override
     public void pushJavaFunction(JavaFunction f) {
-        stack.push(new Closure(f));
+        stack.push(new Closure(f, 0));
+    }
+
+    @Override
+    public void pushJavaClosure(JavaFunction f, int n) {
+        Closure closure = new Closure(f, n);
+        for (int i = n; i > 0; i--) {
+            Object val = stack.pop();
+            closure.upvals[i-1] = new UpvalueHolder(val); // TODO
+        }
+        stack.push(closure);
     }
 
     /**
-     * 把全局变量表推入栈顶。
+     * 把全局环境推入栈顶。
      */
     @Override
     public void pushGlobalTable() {
@@ -891,7 +909,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      */
     @Override
     public LuaType getGlobal(String name) {
-        // 从注册表中取出全局变量表。
+        // 从注册表中取出全局环境。
         Object t = registry.get(LUA_RIDX_GLOBALS);
         return getTable(t, name);
     }
@@ -909,7 +927,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     * 给全局变量表设置 Java 函数（值）
+     * 给全局环境设置 Java 函数（值）
      *
      * @param name
      * @param f

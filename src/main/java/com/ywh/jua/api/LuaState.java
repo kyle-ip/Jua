@@ -302,6 +302,8 @@ public interface LuaState {
      */
     void pushJavaFunction(JavaFunction f);
 
+    void pushJavaClosure(JavaFunction f, int n);
+
     void pushGlobalTable();
 
     LuaType getGlobal(String name);
