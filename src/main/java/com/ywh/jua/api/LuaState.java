@@ -1,15 +1,36 @@
 package com.ywh.jua.api;
 
-import com.ywh.jua.state.Arithmetic;
-
 /**
  * Lua（解释器）状态：Lua API 体现为一系列操作 LuaState 结构的函数。
- * 主要包括基础栈操纵方法、栈访问方法、压栈方法三类。
+ * 主要包括基础栈操作方法、栈访问方法、压栈方法三类。
  *
  * @author ywh
  * @since 2020/8/18 11:26
  */
 public interface LuaState {
+
+    /**
+     * Lua 栈初始深度
+     */
+    int LUA_MINSTACK = 20;
+
+    /**
+     * Lua 栈最大深度
+     */
+    int LUAI_MAXSTACK = 1_000_000;
+
+    /**
+     * 伪索引
+     * LUA_REGISTRYINDEX < min valid index < 0 < max valid index
+     *
+     * 小于等于该值表示伪索引。
+     */
+    int LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1_000;
+
+    /**
+     * 全局环境在注册表的索引
+     */
+    long LUA_RIDX_GLOBALS = 2;
 
     /**
      * 返回栈顶
@@ -190,21 +211,18 @@ public interface LuaState {
     void newTable();
 
     /**
-     *
      * @param nArr
      * @param nRec
      */
     void createTable(int nArr, int nRec);
 
     /**
-     *
      * @param idx
      * @return
      */
     LuaType getTable(int idx);
 
     /**
-     *
      * @param idx
      * @param k
      * @return
@@ -212,7 +230,6 @@ public interface LuaState {
     LuaType getField(int idx, String k);
 
     /**
-     *
      * @param idx
      * @param i
      * @return
@@ -222,20 +239,17 @@ public interface LuaState {
     /* set functions (stack -> Lua) */
 
     /**
-     *
      * @param idx
      */
     void setTable(int idx);
 
     /**
-     *
      * @param idx
      * @param k
      */
     void setField(int idx, String k);
 
     /**
-     *
      * @param idx
      * @param i
      */
@@ -264,4 +278,35 @@ public interface LuaState {
      * @param n
      */
     void concat(int n);
+
+    /**
+     * 判断指定索引的值是否 Java 函数闭包。
+     *
+     * @param idx
+     * @return
+     */
+    boolean isJavaFunction(int idx);
+
+    /**
+     * 转换指定索引的闭包为 Java 函数。
+     *
+     * @param idx
+     * @return
+     */
+    JavaFunction toJavaFunction(int idx);
+
+    /**
+     * 把 Java 函数转换为闭包，推入栈顶。
+     *
+     * @param f
+     */
+    void pushJavaFunction(JavaFunction f);
+
+    void pushGlobalTable();
+
+    LuaType getGlobal(String name);
+
+    void setGlobal(String name);
+
+    void register(String name, JavaFunction f);
 }

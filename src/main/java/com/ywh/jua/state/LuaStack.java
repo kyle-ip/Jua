@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.ywh.jua.api.LuaState.LUA_REGISTRYINDEX;
+
 /**
  * Lua 栈：在 Lua API 中，索引从 1 开始；便于用户使用，索引可以是负数（相对索引），如 -1 表示从栈顶开始递减；
  * 容量是 n，栈顶索引 是 top，则有效索引（写）范围为 [1, top]，可接受索引（读写）范围 [1, n]，无效范围相当于存放 nil 值。
@@ -21,6 +23,11 @@ class LuaStack {
     private final ArrayList<Object> slots;
 
     // ========== 调用栈相关 ==========
+
+    /**
+     * 间接访问注册表
+     */
+    LuaStateImpl state;
 
     /**
      * 闭包
@@ -117,7 +124,7 @@ class LuaStack {
      * @return
      */
     int absIndex(int idx) {
-        if (idx >= 0) {
+        if (idx >= 0 || idx <= LUA_REGISTRYINDEX) {
             return idx;
         } else {
             return idx + slots.size() + 1;
@@ -131,6 +138,9 @@ class LuaStack {
      * @return
      */
     boolean isValid(int idx) {
+        if (idx == LUA_REGISTRYINDEX) {
+            return true;
+        }
         int absIdx = absIndex(idx);
         return absIdx > 0 && absIdx <= slots.size();
     }
@@ -143,6 +153,9 @@ class LuaStack {
      * @return
      */
     Object get(int idx) {
+        if (idx == LUA_REGISTRYINDEX) {
+            return state.registry;
+        }
         int absIdx = absIndex(idx);
         if (absIdx > 0 && absIdx <= slots.size()) {
             return slots.get(absIdx - 1);
@@ -158,6 +171,10 @@ class LuaStack {
      * @param val
      */
     void set(int idx, Object val) {
+        if (idx == LUA_REGISTRYINDEX) {
+            state.registry = (LuaTable) val;
+            return;
+        }
         int absIdx = absIndex(idx);
         slots.set(absIdx - 1, val);
     }
@@ -176,6 +193,5 @@ class LuaStack {
     void reverse(int from, int to) {
         Collections.reverse(slots.subList(from, to + 1));
     }
-
 
 }

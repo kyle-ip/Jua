@@ -24,10 +24,29 @@ import static com.ywh.jua.api.ThreadStatus.LUA_OK;
 public class LuaStateImpl implements LuaState, LuaVM {
 
     /**
+     * Lua 注册表（实现全局变量等）
+     * 注册表是全局状态，每个 Lua 解释器实例都有自己的注册表。
+     * Lua API 没有提供专门的方法操作注册表，通过伪索引访问。
+     *
+     */
+    LuaTable registry = new LuaTable(0, 0);
+
+    /**
      * 使用单向链表实现函数调用栈，头部是栈顶，尾部是栈底。
      * 入栈即在链表头部插入一个节点，让这个节点成为新的头部。
+     *
      */
-    private LuaStack stack = new LuaStack(20);
+    private LuaStack stack = new LuaStack(LUA_MINSTACK);
+
+    public LuaStateImpl() {
+        // 创建注册表，放入一个全局环境（用于存放全局变量）。
+        registry.put(LUA_RIDX_GLOBALS, new LuaTable(0, 0));
+
+        // 推入一个空 Lua 栈（调用帧）。
+        LuaStack stack = new LuaStack(LUA_MINSTACK);
+        stack.state = this;
+        pushLuaStack(stack);
+    }
 
     // ========== Call Stack ==========
 
@@ -588,9 +607,13 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object val = stack.get(-(nArgs + 1));
         if (val instanceof Closure) {
             Closure c = (Closure) val;
-            System.out.printf("call %s<%d,%d>\n", c.proto.getSource(), c.proto.getLineDefined(), c.proto.getLastLineDefined());
             // 执行调用
-            callLuaClosure(nArgs, nResults, c);
+            if (c.proto != null) {
+                callLuaClosure(nArgs, nResults, c);
+            }
+            if (c.javaFunc != null) {
+                callJavaClosure(nArgs, nResults, c);
+            }
         } else {
             throw new RuntimeException("not function!");
         }
@@ -611,7 +634,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         boolean isVararg = c.proto.getIsVararg() == 1;
 
         // 创建调用帧（适当扩大，为指令实现函数预留少量栈空间），指定闭包。
-        LuaStack newStack = new LuaStack(nRegs + 20);
+        LuaStack newStack = new LuaStack(nRegs + LUA_MINSTACK);
         newStack.closure = c;
 
         // 把函数和参数值从旧帧弹出。
@@ -641,7 +664,39 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     * 逐条执行被调用函数的指令，直到遇到 RETUR 指令。
+     * 执行 Java 函数
+     *
+     * @param nArgs
+     * @param nResults
+     * @param c
+     */
+    private void callJavaClosure(int nArgs, int nResults, Closure c) {
+        // 创建新调用帧。
+        LuaStack newStack = new LuaStack(nArgs + LUA_MINSTACK);
+        newStack.state = this;
+        newStack.closure = c;
+
+        // 把参数值从主调用帧中弹出，推入被调用帧后，Java 闭包从主调用帧中弹出。
+        if (nArgs > 0) {
+            newStack.pushN(stack.popN(nArgs), nArgs);
+        }
+        stack.pop();
+
+        // 把被调用帧推入调用栈，成为当前帧；执行 Java 函数，完成后把被调用帧同调用栈弹出（主调用帧又称为当前帧）。
+        pushLuaStack(newStack);
+        int r = c.javaFunc.invoke(this);
+        popLuaStack();
+
+        // 如果有返回值，则把返回值从被调用帧弹出、推入主调用帧（多退少补）。
+        if (nResults != 0) {
+            List<Object> results = newStack.popN(r);
+            //stack.check(results.size())
+            stack.pushN(results, nResults);
+        }
+    }
+
+    /**
+     * 逐条执行被调用函数的指令，直到遇到 RETURN 指令。
      */
     private void runLuaClosure() {
         for (;;) {
@@ -784,5 +839,84 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void loadProto(int idx) {
         Prototype proto = stack.closure.proto.getProtos()[idx];
         stack.push(new Closure(proto));
+    }
+
+    /**
+     * 判断栈中指定索引处的值是否可转换为 Java 函数。
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public boolean isJavaFunction(int idx) {
+        Object val = stack.get(idx);
+        return val instanceof Closure && ((Closure) val).javaFunc != null;
+    }
+
+    /**
+     * 从栈中取指定索引的闭包、转换为 Java 函数并返回。
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public JavaFunction toJavaFunction(int idx) {
+        Object val = stack.get(idx);
+        return val instanceof Closure ? ((Closure) val).javaFunc : null;
+    }
+
+    /**
+     * 接收一个 Java 函数参数，把它抓换为闭包后入栈。
+     *
+     * @param f
+     */
+    @Override
+    public void pushJavaFunction(JavaFunction f) {
+        stack.push(new Closure(f));
+    }
+
+    /**
+     * 把全局变量表推入栈顶。
+     */
+    @Override
+    public void pushGlobalTable() {
+        stack.push(registry.get(LUA_RIDX_GLOBALS));
+    }
+
+    /**
+     * 获取全局变量
+     *
+     * @param name
+     * @return
+     */
+    @Override
+    public LuaType getGlobal(String name) {
+        // 从注册表中取出全局变量表。
+        Object t = registry.get(LUA_RIDX_GLOBALS);
+        return getTable(t, name);
+    }
+
+    /**
+     * 设置全局变量（值为栈顶的）
+     *
+     * @param name
+     */
+    @Override
+    public void setGlobal(String name) {
+        Object t = registry.get(LUA_RIDX_GLOBALS);
+        Object v = stack.pop();
+        setTable(t, name, v);
+    }
+
+    /**
+     * 给全局变量表设置 Java 函数（值）
+     *
+     * @param name
+     * @param f
+     */
+    @Override
+    public void register(String name, JavaFunction f) {
+        pushJavaFunction(f);
+        setGlobal(name);
     }
 }

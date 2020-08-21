@@ -52,7 +52,7 @@ public enum OpCode {
     /**
      * R(A) := UpValue[B][RK(C)]
      */
-    GETTABUP(0, 1, OpArgU, OpArgK, iABC, null),
+    GETTABUP(0, 1, OpArgU, OpArgK, iABC, Instructions::getTabUp),
 
     /**
      * R(A) := R(B)[RK(C)]

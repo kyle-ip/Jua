@@ -945,4 +945,25 @@ public class Instructions {
             vm.pushInteger(a);
         }
     }
+
+    /* ========== 全局变量指令（call）========== */
+
+    /**
+     * GETTABUP 指令（iABC 模式）
+     * 把全局变量放入指定寄存器。
+     *
+     * R(A) := UpValue[B][RK(C)]
+     *
+     * @param i
+     * @param vm
+     */
+    public static void getTabUp(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int c = Instruction.getC(i);
+        vm.pushGlobalTable();
+        vm.getRK(c);
+        vm.getTable(-2);
+        vm.replace(a);
+        vm.pop(1);
+    }
 }

@@ -2,13 +2,10 @@ package com.ywh.jua;
 
 import com.ywh.jua.api.LuaState;
 import com.ywh.jua.api.LuaType;
-import com.ywh.jua.api.LuaVM;
-import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.LocVar;
 import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
 import com.ywh.jua.state.LuaStateImpl;
-import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
 
 import java.nio.file.Files;
@@ -28,18 +25,37 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "G:\\demo\\jua\\src\\test\\resources\\test.luac";
+        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.luac";
         byte[] data = Files.readAllBytes(Paths.get(fileName));
-        Prototype proto = BinaryChunk.undump(data);
-        list(proto);
+//        Prototype proto = BinaryChunk.undump(data);
+//        list(proto);
+
+//        LuaState ls = new LuaStateImpl();
+//        ls.load(data, fileName, "b");
+//        ls.call(0, 0);
 
         LuaState ls = new LuaStateImpl();
+        ls.register("print", Main::javaPrint);
         ls.load(data, fileName, "b");
         ls.call(0, 0);
     }
 
-    private static void loadMain() {
-
+    private static int javaPrint(LuaState ls) {
+        int nArgs = ls.getTop();
+        for (int i = 1; i <= nArgs; i++) {
+            if (ls.isBoolean(i)) {
+                System.out.print(ls.toBoolean(i));
+            } else if (ls.isString(i)) {
+                System.out.print(ls.toString(i));
+            } else {
+                System.out.print(ls.typeName(ls.type(i)));
+            }
+            if (i < nArgs) {
+                System.out.print("\t");
+            }
+        }
+        System.out.println();
+        return 0;
     }
 
 //    /**
