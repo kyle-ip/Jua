@@ -7,6 +7,7 @@ import com.ywh.jua.api.LuaVM;
 
 import static com.ywh.jua.api.ArithOp.*;
 import static com.ywh.jua.api.CmpOp.*;
+import static com.ywh.jua.api.LuaState.LUA_REGISTRYINDEX;
 import static com.ywh.jua.api.LuaType.*;
 
 /**
@@ -41,7 +42,8 @@ public class Instructions {
 
     /**
      * JMP 指令（iAsBx 模式）
-     * 执行无条件跳转（Lua 支持 tag 和 goto）。
+     *      1. 执行无条件跳转（Lua 支持 tag 和 goto）。
+     *      2. 闭合处于开启状态的 Upvalue。
      * 
      * pc+=sBx; if (A) close all upvalues >= R(A - 1)
      *
@@ -53,7 +55,7 @@ public class Instructions {
         int sBx = Instruction.getSBx(i);
         vm.addPC(sBx);
         if (a != 0) {
-            throw new RuntimeException("todo: jmp!");
+            vm.closeUpvalues(a);
         }
     }
 
@@ -690,8 +692,8 @@ public class Instructions {
         // 数组起始索引（需要换算）。
         int c = Instruction.getC(i);
 
-        // 如果 B 操作数为 0，表示没有要设置到数组得值。
-        // 可以使用 CALL 指令留在栈顶得全部返回值。
+        // 如果 B 操作数为 0，表示没有要设置到数组的值。
+        // 可以使用 CALL 指令留在栈顶的全部返回值。
         boolean bIsZero = b == 0;
         if (bIsZero) {
             b = ((int) vm.toInteger(-1)) - a - 1;
@@ -931,6 +933,7 @@ public class Instructions {
         // c == 1，没有返回值。
         if (c == 1) {
             // no results
+            return;
         }
         // c > 1，则返回值 c - 1 个。
         else if (c > 1) {
@@ -946,11 +949,43 @@ public class Instructions {
         }
     }
 
-    /* ========== 全局变量指令（call）========== */
+    /* ========== Upvalue 指令（upvalue）========== */
+
+    /**
+     * GETUPVAL 指令（iABC 模式）
+     * 把当前闭包的某个 Upvalue 值拷贝到目标寄存器。
+     * 在 Lua 虚拟机指令操作数中，Upvalue 的索引从 0 开始，但是转换成 Lua 栈伪索引时，Upvalue 指令从 1 开始。
+     *
+     * R(A) := UpValue[B]
+     *
+     * @param i
+     * @param vm
+     */
+    public static void getUpval(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i) + 1;
+        vm.copy(luaUpvalueIndex(b), a);
+    }
+
+    /**
+     * SETUPVAL 指令（iABC 模式）
+     * 使用寄存器中的值给当前闭包的 Upvalue 赋值。
+     *
+     * UpValue[B] := R(A)
+     *
+     * @param i
+     * @param vm
+     */
+    public static void setUpval(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i) + 1;
+        vm.copy(a, luaUpvalueIndex(b));
+    }
 
     /**
      * GETTABUP 指令（iABC 模式）
-     * 把全局变量放入指定寄存器。
+     * 当 Upvalue 是表，可以根据键从该表中取值，放入目标寄存器。
+     * 等价于 GETUPVAL 和 GETTABLE 两条指令组合。
      *
      * R(A) := UpValue[B][RK(C)]
      *
@@ -959,11 +994,43 @@ public class Instructions {
      */
     public static void getTabUp(int i, LuaVM vm) {
         int a = Instruction.getA(i) + 1;
+
+        // Upvalue 索引
+        int b = Instruction.getB(i) + 1;
+
+        // 键索引（需要放入栈顶）
         int c = Instruction.getC(i);
-        vm.pushGlobalTable();
         vm.getRK(c);
-        vm.getTable(-2);
+        vm.getTable(luaUpvalueIndex(b));
         vm.replace(a);
-        vm.pop(1);
+    }
+
+    /**
+     * SETTABUP 指令（iABC 模式）
+     * 当 Upvalue 是表，可以根据键往该表写入值。
+     * 等价于 GETUPVAL 和 SETTABLE 两条指令组合。
+     *
+     * UpValue[A][RK(B)] := RK(C)
+     *
+     * @param i
+     * @param vm
+     */
+    public static void setTabUp(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i);
+        int c = Instruction.getC(i);
+        vm.getRK(b);
+        vm.getRK(c);
+        vm.setTable(luaUpvalueIndex(a));
+    }
+
+    /**
+     * 转换 Upvalue 索引。
+     *
+     * @param i
+     * @return
+     */
+    private static int luaUpvalueIndex(int i) {
+        return LUA_REGISTRYINDEX - i;
     }
 }

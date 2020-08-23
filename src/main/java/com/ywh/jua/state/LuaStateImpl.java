@@ -4,10 +4,13 @@ package com.ywh.jua.state;
 import com.ywh.jua.api.*;
 import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.Prototype;
+import com.ywh.jua.chunk.Upvalue;
 import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.ywh.jua.api.ArithOp.LUA_OPBNOT;
@@ -190,7 +193,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     * 将栈顶索引设置为指定值，小于当前栈顶索引得值全部弹出
+     * 将栈顶索引设置为指定值，小于当前栈顶索引的值全部弹出
      *
      * @param idx
      */
@@ -586,11 +589,11 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Closure closure = new Closure(proto);
         stack.push(closure);
 
-        // 判断闭包是否需要 Upvalue
+        // 闭包需要 Upvalue
         if (proto.getUpvalues().length > 0) {
             Object env = registry.get(LUA_RIDX_GLOBALS);
 
-            // 第一个 Upvalue（对于主函数来说是 _ENV）会被初始化为全局环境，其他得 Upvalue 会被初始化成 nil。
+            // 第一个 Upvalue（对于主函数来说是 _ENV）会被初始化为全局环境，其他的 Upvalue 会被初始化成 nil。
             // 由于 Upvalue 的初始值为 nil，所以只要把第一个 Upvalue 值设置成全局环境即可。
             closure.upvals[0] = new UpvalueHolder(env);
         }
@@ -846,7 +849,54 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public void loadProto(int idx) {
         Prototype proto = stack.closure.proto.getProtos()[idx];
-        stack.push(new Closure(proto));
+        Closure closure = new Closure(proto);
+        stack.push(closure);
+
+        // 根据函数原型中的 Upvalue 表来初始化闭包的 Upvalue 值
+        for (int i = 0; i < proto.getUpvalues().length; i++) {
+            Upvalue uvInfo = proto.getUpvalues()[i];
+            int uvIdx = uvInfo.getIdx();
+
+            // 该 Upvalue 捕获的是当前函数的局部变量。
+            // 开放状态：Upvalue 捕获的外围函数局部变量还在栈上，直接引用（寄存器里的 Lua 值）；
+            // 闭合状态：Upvalue 捕获的外围函数局部变量不在栈上，需要保存在其他地方。
+            // 开放 => 闭合：把寄存器里的 Lua 值复制出来，再更新 Upvalue。
+            if (uvInfo.getInstack() == 1) {
+                if (stack.openuvs == null) {
+                    stack.openuvs = new HashMap<>();
+                }
+                if (stack.openuvs.containsKey(uvIdx)) {
+                    closure.upvals[i] = stack.openuvs.get(uvIdx);
+                } else {
+                    closure.upvals[i] = new UpvalueHolder(stack, uvIdx);
+                    stack.openuvs.put(uvIdx, closure.upvals[i]);
+                }
+            }
+            // 该 Upvalue 捕获的是更外围函数中的局部变量（0）。
+            else {
+                closure.upvals[i] = stack.closure.upvals[uvIdx];
+            }
+        }
+    }
+
+    /**
+     * 闭合处于开启状态的 Upvalue：
+     * 开放 => 闭合：把寄存器里的 Lua 值复制出来，再更新 Upvalue。
+     *
+     * @param a
+     */
+    @Override
+    public void closeUpvalues(int a) {
+        if (stack.openuvs == null) {
+            return;
+        }
+        for (Iterator<UpvalueHolder> it = stack.openuvs.values().iterator(); it.hasNext(); ) {
+            UpvalueHolder uv = it.next();
+            if (uv.index >= a - 1) {
+                uv.migrate();
+                it.remove();
+            }
+        }
     }
 
     /**
@@ -883,13 +933,23 @@ public class LuaStateImpl implements LuaState, LuaVM {
         stack.push(new Closure(f, 0));
     }
 
+    /**
+     * 把Java 函数转换成 Java 闭包推入栈顶（捕获 Upvalue）。
+     *
+     * @param f
+     * @param n
+     */
     @Override
     public void pushJavaClosure(JavaFunction f, int n) {
         Closure closure = new Closure(f, n);
+
+        // 从栈顶弹出 n 个 Lua 值，成为 Java 闭包的 Upvlue。
         for (int i = n; i > 0; i--) {
             Object val = stack.pop();
             closure.upvals[i-1] = new UpvalueHolder(val); // TODO
         }
+
+        // 把 Java 闭包推入栈顶。
         stack.push(closure);
     }
 

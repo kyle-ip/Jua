@@ -3,6 +3,7 @@ package com.ywh.jua.state;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static com.ywh.jua.api.LuaState.LUA_REGISTRYINDEX;
 
@@ -48,6 +49,11 @@ class LuaStack {
      * 前一个栈帧指针
      */
     LuaStack prev;
+
+    /**
+     * 局部变量的寄存器索引表
+     */
+    Map<Integer, UpvalueHolder> openuvs;
 
     public LuaStack(int stackSize) {
         this.slots = new ArrayList<>(stackSize);
@@ -138,6 +144,12 @@ class LuaStack {
      * @return
      */
     boolean isValid(int idx) {
+
+        // Upvalue
+        if (idx < LUA_REGISTRYINDEX) {
+            int uvIdx = LUA_REGISTRYINDEX - idx - 1;
+            return closure != null && uvIdx < closure.upvals.length;
+        }
         if (idx == LUA_REGISTRYINDEX) {
             return true;
         }
@@ -153,6 +165,17 @@ class LuaStack {
      * @return
      */
     Object get(int idx) {
+        // 索引小于注册表索引，表示 Upvalue 伪索引，需要转换成真实索引（从 0 开始），再判断是否在有效范围内。
+        if (idx < LUA_REGISTRYINDEX) {
+            int uvIdx = LUA_REGISTRYINDEX - idx - 1;
+            if (closure != null && closure.upvals.length > uvIdx && closure.upvals[uvIdx] != null) {
+                return closure.upvals[uvIdx].get();
+            }
+            // 伪索引无效，返回空。
+            else {
+                return null;
+            }
+        }
         if (idx == LUA_REGISTRYINDEX) {
             return state.registry;
         }
@@ -171,12 +194,18 @@ class LuaStack {
      * @param val
      */
     void set(int idx, Object val) {
+        if (idx < LUA_REGISTRYINDEX) { /* upvalues */
+            int uvIdx = LUA_REGISTRYINDEX - idx - 1;
+            if (closure != null && closure.upvals.length > uvIdx && closure.upvals[uvIdx] != null) {
+                closure.upvals[uvIdx].set(val);
+            }
+            return;
+        }
         if (idx == LUA_REGISTRYINDEX) {
             state.registry = (LuaTable) val;
             return;
         }
-        int absIdx = absIndex(idx);
-        slots.set(absIdx - 1, val);
+        slots.set(absIndex(idx) - 1, val);
     }
 
     /**

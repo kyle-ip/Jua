@@ -50,4 +50,10 @@ public interface LuaVM extends LuaState {
      * @param idx
      */
     void loadProto(int idx);
+
+    /**
+     *
+     * @param a
+     */
+    void closeUpvalues(int a);
 }

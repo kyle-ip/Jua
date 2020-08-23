@@ -25,7 +25,7 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.luac";
+        String fileName = "C:\\Project\\course-code\\luago-book\\code\\lua\\ch10\\luac.out";
         byte[] data = Files.readAllBytes(Paths.get(fileName));
 //        Prototype proto = BinaryChunk.undump(data);
 //        list(proto);

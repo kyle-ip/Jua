@@ -11,10 +11,22 @@ import com.ywh.jua.chunk.Prototype;
  */
 public class Closure {
 
+    /**
+     * Lua 函数原型
+     */
     final Prototype proto;
 
+    /**
+     * Java 函数原型
+     */
     final JavaFunction javaFunc;
 
+    /**
+     * Upvalue 列表，增加一个间接层：
+     *      1. 对于某个 Upvalue，对它的任何改动都反应在其他该 Upvalue 可见的地方；
+     *      2. 当嵌套函数执行时，外围函数的局部变量有可能已经退出作用域。
+     * 其长度由编译器计算好。
+     */
     final UpvalueHolder[] upvals;
 
     Closure(Prototype proto) {

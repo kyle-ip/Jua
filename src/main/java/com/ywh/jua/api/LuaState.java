@@ -112,7 +112,7 @@ public interface LuaState {
     void rotate(int idx, int n);
 
     /**
-     * 将栈顶索引设置为指定值，小于当前栈顶索引得值全部弹出
+     * 将栈顶索引设置为指定值，小于当前栈顶索引的值全部弹出
      *
      * @param idx
      */

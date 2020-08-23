@@ -47,7 +47,7 @@ public enum OpCode {
     /**
      * R(A) := UpValue[B]
      */
-    GETUPVAL(0, 1, OpArgU, OpArgN, iABC, null),
+    GETUPVAL(0, 1, OpArgU, OpArgN, iABC, Instructions::getUpval),
 
     /**
      * R(A) := UpValue[B][RK(C)]
@@ -62,12 +62,12 @@ public enum OpCode {
     /**
      * UpValue[A][RK(B)] := RK(C)
      */
-    SETTABUP(0, 0, OpArgK, OpArgK, iABC, null),
+    SETTABUP(0, 0, OpArgK, OpArgK, iABC, Instructions::setTabUp),
 
     /**
      * UpValue[B] := R(A)
      */
-    SETUPVAL(0, 0, OpArgU, OpArgN, iABC, null),
+    SETUPVAL(0, 0, OpArgU, OpArgN, iABC, Instructions::setUpval),
 
     /**
      * R(A)[RK(B)] := RK(C)
