@@ -144,12 +144,12 @@ class LuaStack {
      * @return
      */
     boolean isValid(int idx) {
-
         // Upvalue
         if (idx < LUA_REGISTRYINDEX) {
             int uvIdx = LUA_REGISTRYINDEX - idx - 1;
             return closure != null && uvIdx < closure.upvals.length;
         }
+        // 注册表
         if (idx == LUA_REGISTRYINDEX) {
             return true;
         }
@@ -176,6 +176,7 @@ class LuaStack {
                 return null;
             }
         }
+        // 注册表
         if (idx == LUA_REGISTRYINDEX) {
             return state.registry;
         }

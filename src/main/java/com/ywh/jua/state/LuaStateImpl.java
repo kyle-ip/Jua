@@ -583,18 +583,16 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public ThreadStatus load(byte[] chunk, String chunkName, String mode) {
 
         // TODO
-        // 解析字节数组为函数原型。
-        // 把实例化为闭包的函数原型推入栈顶。
+        // 解析字节数组为函数原型，把实例化为闭包的函数原型推入栈顶。
         Prototype proto = BinaryChunk.undump(chunk);
         Closure closure = new Closure(proto);
         stack.push(closure);
 
         // 闭包需要 Upvalue
         if (proto.getUpvalues().length > 0) {
-            Object env = registry.get(LUA_RIDX_GLOBALS);
-
             // 第一个 Upvalue（对于主函数来说是 _ENV）会被初始化为全局环境，其他的 Upvalue 会被初始化成 nil。
             // 由于 Upvalue 的初始值为 nil，所以只要把第一个 Upvalue 值设置成全局环境即可。
+            Object env = registry.get(LUA_RIDX_GLOBALS);
             closure.upvals[0] = new UpvalueHolder(env);
         }
         return LUA_OK;
@@ -644,29 +642,29 @@ public class LuaStateImpl implements LuaState, LuaVM {
         int nParams = c.proto.getNumParams();
         boolean isVararg = c.proto.getIsVararg() == 1;
 
-        // 创建调用帧（适当扩大，为指令实现函数预留少量栈空间），指定闭包。
+        // 创建被调用帧（适当扩大，为指令实现函数预留少量栈空间），指定闭包。
         LuaStack newStack = new LuaStack(nRegs + LUA_MINSTACK);
         newStack.closure = c;
 
-        // 把函数和参数值从旧帧弹出。
+        // 把函数和参数值从主调用帧弹出。
         List<Object> funcAndArgs = stack.popN(nArgs + 1);
 
-        // 按照固定参数数量，把参数传入新帧。
-        // 如果被调用函数是 vararg 参数，且传入参数的数量多余固定参数数量，需要把 vararg 参数记录。
+        // 按照固定参数数量，把参数传入被调用帧。
+        // 如果被调用函数是 vararg 参数，且传入参数的数量多于固定参数数量，需要把 vararg 参数记录在被调用帧。
         newStack.pushN(funcAndArgs.subList(1, funcAndArgs.size()), nParams);
         if (nArgs > nParams && isVararg) {
             newStack.varargs = funcAndArgs.subList(nParams + 1, funcAndArgs.size());
         }
 
-        // 新帧入栈（新设置“当前帧”），超出 nRegs 部分为溢出。
+        // 被调用帧入栈（成为“当前帧”），且超出 nRegs 部分为溢出。
         pushLuaStack(newStack);
         setTop(nRegs);
 
-        // 执行被调用函数的指令，调用完成后弹出（恢复“当前帧”）。
+        // 执行被调用函数的指令，调用完成后弹出被调用帧（恢复主调用帧为“当前帧”）。
         runLuaClosure();
         popLuaStack();
 
-        // 如果有返回值，则从刚才弹出的帧中获取，并放入当前帧。
+        // 如果有返回值，则从被调用帧中获取，并放入当前帧。
         if (nResults != 0) {
             List<Object> results = newStack.popN(newStack.top() - nRegs);
             //stack.check(results.size())
@@ -693,7 +691,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
         stack.pop();
 
-        // 把被调用帧推入调用栈，成为当前帧；执行 Java 函数，完成后把被调用帧同调用栈弹出（主调用帧又称为当前帧）。
+        // 把被调用帧推入调用栈，成为当前帧；执行 Java 函数，完成后把被调用帧同调用栈弹出（主调用帧又成为当前帧）。
         pushLuaStack(newStack);
         int r = c.javaFunc.invoke(this);
         popLuaStack();

@@ -20,7 +20,10 @@ public interface LuaState {
     int LUAI_MAXSTACK = 1_000_000;
 
     /**
-     * 伪索引
+     * 伪索引，用于操作注册表和 Upvalue。
+     * 一般不需要 Lua 有很大的容量，所以定义常量 {@link #LUAI_MAXSTACK} 用于表示 Lua 的最大索引；
+     * 由于索引也可能是负数，所以正负 {@link #LUAI_MAXSTACK} 就是有效索引的最大值和最小值，负值再 -1000 即表示注册表的伪索引。
+     *
      * LUA_REGISTRYINDEX < min valid index < 0 < max valid index
      *
      * 小于等于该值表示伪索引。
