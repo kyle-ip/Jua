@@ -94,3 +94,6 @@ mvn clean install
 - [Lua 5.3 Test suites](http://www.lua.org/tests/lua-5.3.4-tests.tar.gz)
 - ...
 
+## License
+
+See LICENSE file.
