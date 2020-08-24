@@ -2,6 +2,8 @@ package com.ywh.jua;
 
 import com.ywh.jua.api.LuaState;
 import com.ywh.jua.api.LuaType;
+import com.ywh.jua.api.ThreadStatus;
+import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.LocVar;
 import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
@@ -11,6 +13,8 @@ import com.ywh.jua.vm.OpCode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static com.ywh.jua.api.LuaType.LUA_TNIL;
+import static com.ywh.jua.api.ThreadStatus.LUA_OK;
 import static com.ywh.jua.vm.Instruction.*;
 import static com.ywh.jua.vm.OpArgMask.*;
 
@@ -25,9 +29,9 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "G:\\demo\\jua\\src\\test\\resources\\vector2.luac";
+        String fileName = "G:\\demo\\jua\\src\\test\\resources\\test.luac";
         byte[] data = Files.readAllBytes(Paths.get(fileName));
-//        Prototype proto = BinaryChunk.undump(data);
+        Prototype proto = BinaryChunk.undump(data);
 //        list(proto);
 
 //        LuaState ls = new LuaStateImpl();
@@ -38,8 +42,67 @@ public class Main {
         ls.register("print", Main::print);
         ls.register("getmetatable", Main::getMetatable);
         ls.register("setmetatable", Main::setMetatable);
+        ls.register("next", Main::next);
+        ls.register("pairs", Main::pairs);
+        ls.register("ipairs", Main::iPairs);
+        ls.register("error", Main::error);
+        ls.register("pcall", Main::pCall);
         ls.load(data, fileName, "b");
         ls.call(0, 0);
+    }
+
+
+    private static int  error(LuaState ls) {
+        return ls.error();
+    }
+
+    private static int  pCall(LuaState ls) {
+        int nArgs = ls.getTop() - 1;
+        ThreadStatus status = ls.pCall(nArgs, -1, 0);
+        ls.pushBoolean(status == LUA_OK);
+        ls.insert(1);
+        return ls.getTop();
+    }
+
+    /**
+     * 返回 next 函数、表、nil。
+     *
+     * @param ls
+     * @return
+     */
+    private static int pairs(LuaState ls) {
+        ls.pushJavaFunction(Main::next);        /* will return generator, */
+        ls.pushValue(1);                 /* state, */
+        ls.pushNil();
+        return 3;
+    }
+
+    /**
+     *
+     * @param ls
+     * @return
+     */
+    private static int iPairs(LuaState ls) {
+        ls.pushJavaFunction(Main::iPairsAux); /* iteration function */
+        ls.pushValue(1);                      /* state */
+        ls.pushInteger(0);                    /* initial value */
+        return 3;
+    }
+
+    private static int iPairsAux(LuaState ls) {
+        long i = ls.toInteger(2) + 1;
+        ls.pushInteger(i);
+        return ls.getI(1, i) == LUA_TNIL ? 1 : 2;
+    }
+
+    private static int next(LuaState ls) {
+        ls.setTop(2); /* create a 2nd argument if there isn't one */
+        if (ls.next(1)) {
+            return 2;
+        } else {
+            ls.pushNil();
+            return 1;
+        }
     }
 
     private static int print(LuaState ls) {
@@ -168,6 +231,7 @@ public class Main {
         int[] code = f.getCode();
         int[] lineInfo = f.getLineInfo();
 
+        System.out.printf("instructions (%d): \n", code.length);
         // 遍历指令表
         for (int i = 0; i < code.length; i++) {
             String line = lineInfo.length > 0 ? String.valueOf(lineInfo[i]) : "-";

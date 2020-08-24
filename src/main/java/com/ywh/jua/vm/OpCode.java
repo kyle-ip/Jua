@@ -227,12 +227,12 @@ public enum OpCode {
     /**
      * R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
      */
-    TFORCALL(0, 0, OpArgN, OpArgU, iABC, null),
+    TFORCALL(0, 0, OpArgN, OpArgU, iABC, Instructions::tForCall),
 
     /**
      * if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }
      */
-    TFORLOOP(0, 1, OpArgR, OpArgN, iAsBx, null),
+    TFORLOOP(0, 1, OpArgR, OpArgN, iAsBx, Instructions::tForLoop),
 
     /**
      * R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
@@ -253,7 +253,6 @@ public enum OpCode {
      * extra (larger) argument for previous opcode
      */
     EXTRAARG(0, 0, OpArgU, OpArgU, iAx, null),
-
 
     ;
 

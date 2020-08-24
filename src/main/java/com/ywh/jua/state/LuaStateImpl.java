@@ -16,6 +16,7 @@ import java.util.List;
 import static com.ywh.jua.api.ArithOp.LUA_OPBNOT;
 import static com.ywh.jua.api.ArithOp.LUA_OPUNM;
 import static com.ywh.jua.api.LuaType.*;
+import static com.ywh.jua.api.ThreadStatus.LUA_ERRRUN;
 import static com.ywh.jua.api.ThreadStatus.LUA_OK;
 
 /**
@@ -1284,25 +1285,74 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     * 根据键迭代取表的下一个键值对
+     * 根据键迭代取指定索引的表的下一个键值对
      *
      * @param idx
      * @return
      */
     @Override
     public boolean next(int idx) {
+        // 取指定索引的表。
         Object val = stack.get(idx);
         if (val instanceof LuaTable) {
             LuaTable t = (LuaTable) val;
+            // 上一个键从栈顶弹出，再取其下一个键。
+            // key 为空，
             Object key = stack.pop();
             Object nextKey = t.nextKey(key);
+
+            // 遍历未结束，把下一个键值对推入栈中，返回 true；
             if (nextKey != null) {
                 stack.push(nextKey);
                 stack.push(t.get(nextKey));
                 return true;
             }
+
+            // 遍历已结束，返回 false。
             return false;
         }
         throw new RuntimeException("table expected!");
+    }
+
+    /**
+     * 从栈顶弹出一个值作为错误抛出。
+     *
+     * @return
+     */
+    @Override
+    public int error() {
+        Object err = stack.pop();
+        // TODO
+        throw new RuntimeException(err.toString());
+    }
+
+    /**
+     * 调用函数并处理异常
+     *
+     * @param nArgs
+     * @param nResults
+     * @param msgh
+     * @return
+     */
+    @Override
+    public ThreadStatus pCall(int nArgs, int nResults, int msgh) {
+        LuaStack caller = stack;
+        try {
+            // 尝试正常调用函数
+            call(nArgs, nResults);
+            return LUA_OK;
+        } catch (Exception e) {
+
+            // 存在指定的错误处理器
+            if (msgh != 0) {
+                throw e;
+            }
+            while (stack != caller) {
+                popLuaStack();
+            }
+            // TODO
+            stack.push(e.getMessage());
+            return LUA_ERRRUN;
+        }
     }
 }

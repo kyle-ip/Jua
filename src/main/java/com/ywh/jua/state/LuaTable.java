@@ -206,13 +206,14 @@ class LuaTable {
      */
     Object nextKey(Object key) {
 
-        // 如果传入 nil，表示遍历开始，需要把所有的键收集到 keys 中。
+        // 如果传入 nil，表示遍历开始，需要先把所有的键收集到 keys 中。
         if (keys == null || (key == null && changed)) {
             initKeys();
             changed = false;
         }
 
         Object nextKey = keys.get(key);
+        // 如果下一个键为空，且当前键为空，且当前键不是最后一个键，则访问错误。
         if (nextKey == null && key != null && key != lastKey) {
             throw new RuntimeException("invalid key to 'next'");
         }
@@ -252,6 +253,7 @@ class LuaTable {
                 }
             }
         }
+        // 设置最后一个 key。
         lastKey = key;
     }
 }

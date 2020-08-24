@@ -8,6 +8,9 @@ package com.ywh.jua.api;
  */
 public enum ThreadStatus {
 
+    /**
+     * 执行成功
+     */
     LUA_OK,
 
     LUA_YIELD,

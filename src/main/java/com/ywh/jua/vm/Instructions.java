@@ -28,7 +28,7 @@ public class Instructions {
      * MOVE 指令（iABC 模式）
      * 把源寄存器（索引由操作数指定）里的值移动到目标寄存器（索引由操作数指定）里；但实际上是复制，因为源寄存器的值原封不动。
      * 常用于局部变量赋值和传参，局部变量实际存在于寄存器中，由于 MOVE 等指令使用操作数 A 表示目标寄存器索引，所以局部变量数量不超过 255 个。
-     * 
+     *
      * R(A) := R(B)
      *
      * @param i
@@ -44,7 +44,7 @@ public class Instructions {
      * JMP 指令（iAsBx 模式）
      *      1. 执行无条件跳转（Lua 支持 tag 和 goto）。
      *      2. 闭合处于开启状态的 Upvalue。
-     * 
+     *
      * pc+=sBx; if (A) close all upvalues >= R(A - 1)
      *
      * @param i
@@ -64,7 +64,7 @@ public class Instructions {
     /**
      * LOCDNIL 指令（iABC 模式）
      * 给连续 n 个寄存器放置 nil 值。
-     * 
+     *
      * R(A), R(A+1), ..., R(A+B) := nil
      *
      * @param i
@@ -90,7 +90,7 @@ public class Instructions {
     /**
      * LOADBOOL 命令（iABC 模式）
      * 给单个寄存器设置布尔值
-     * 
+     *
      * R(A) := (bool)B; if (C) pc++
      *
      * @param i
@@ -120,9 +120,9 @@ public class Instructions {
     /**
      * LOADK 指令（iABx 模式）
      * 将常量表里某个常量加载到指定寄存器
-     * 
+     *
      * Lua 函数里出现的字面量（数字、字符串）会被百年一起收集，放进常量表。
-     * 
+     *
      * R(A) := Kst(Bx)
      *
      * @param i
@@ -146,7 +146,7 @@ public class Instructions {
     /**
      * LOADKX 指令（iABx 模式）
      * 需要和 EXTRAARG 指令（iAx 模式）搭配使用，用后者的 Ax 操作数来指导常量索引。
-     * 
+     *
      * R(A) := Kst(extra arg)
      *
      * @param i
@@ -304,7 +304,7 @@ public class Instructions {
     /**
      * 二元算数运算指令（iABC 模式）
      * 对两个寄存器或常量值（索引由操作数 B 和 C 指定）进行运算，将结果放入另一个寄存器（索引由操作数 A 指定）
-     * 
+     *
      * R(A) := RK(B) op RK(C)
      *
      * @param i
@@ -331,9 +331,9 @@ public class Instructions {
 
     /**
      * 二元算数运算指令（iABC 模式）
-     * 
+     *
      * 对操作数 B 所指的寄存器的值进行运算，然后把结果放入操作数 A 指定的寄存器中。
-     * 
+     *
      * R(A) := op R(B)
      *
      * @param i
@@ -428,7 +428,7 @@ public class Instructions {
 
     /**
      * NOT 指令（iABC 模式）
-     * 
+     *
      * R(A) := not R(B)
      *
      * @param i
@@ -444,7 +444,7 @@ public class Instructions {
     /**
      * TEST 指令（iABC 模式）
      * 判断寄存器 A 中的值转换为布尔值之后是否和操作数 C 表示的布尔值一致，一致则跳过下一条指令
-     * 
+     *
      * if not (R(A) <=> C) then pc++
      *
      * @param i
@@ -461,9 +461,9 @@ public class Instructions {
     /**
      * TESTSET 指令（iABC 模式）
      * 判断寄存器 B 中的值转换为布尔值之后是否和操作数 C 表示的布尔值一致，一致则把寄存器 B 中的值复制到寄存器 A
-     * 
+     *
      * 用于 Lua 中的逻辑与和逻辑或
-     * 
+     *
      * if (R(B) <=> C) then R(A) := R(B) else pc++
      *
      * @param i
@@ -484,7 +484,7 @@ public class Instructions {
 
     /**
      * LEN 指令（iABC 模式）
-     * 
+     *
      * R(A) := length of R(B)
      *
      * @param i
@@ -504,7 +504,7 @@ public class Instructions {
     /**
      * CONCAT 指令（iABC 模式）
      * 将连续 n 个寄存器的值拼接，放入另一个寄存器
-     * 
+     *
      * R(A) := R(B).. ... ..R(C)
      *
      * @param i
@@ -534,12 +534,13 @@ public class Instructions {
     /* ========== 循环指令（for）========== */
 
     // 循环有两种形式，数值形式（按一定步长遍历某个范围内的数值）和通用形式（遍历表）
-    // 其中数值 for 需要 FORPREP 和 FORLOOP 两条指令实现
+    // 数值 for 由 FORPREP 和 FORLOOP 两条指令实现；
+    // 通用 for 由 TFORCALL 和 TFORLOOP 两条指令实现。
 
     /**
      * FORPREP 指令（iAsBx 模式）
      * 在循环开始之前预先给数值减去步长
-     * 
+     *
      * R(A)-=R(A+2); pc+=sBx
      *
      * @param i
@@ -575,10 +576,10 @@ public class Instructions {
      * FORLOOP 指令（iAsBx 模式）
      * 先给数值加上步长，判断是否还在范围内，已超出范围则结束；
      * 否则把数值拷贝给用户定义的局部变量，然后跳转到循环体内部开始执行具体代码块。
-     * 
+     *
      * R(A)+=R(A+2);
      * if R(A) <?= R(A+1) then {
-     * pc+=sBx; R(A+3)=R(A)
+     *     pc+=sBx; R(A+3)=R(A)
      * }
      *
      * @param i
@@ -603,12 +604,52 @@ public class Instructions {
         }
     }
 
-    /* ========== 表指令（for）========== */
+
+    /**
+     * TFORCALL 指令（iABC 模式）
+     *
+     * R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
+     *
+     * @param i
+     * @param vm
+     */
+    public static void tForCall(int i, LuaVM vm) {
+
+        // 迭代器索引
+        int a = Instruction.getA(i) + 1;
+        int c = Instruction.getC(i);
+        pushFuncAndArgs(a, 3, vm);
+        vm.call(2, c);
+        popResults(a + 3, c + 1, vm);
+    }
+
+    /**
+     * TFORLOOP 指令（iAsBx 模式）
+     *
+     * if R(A+1) ~= nil then {
+     *     R(A)=R(A+1); pc += sBx
+     * }
+     *
+     * @param i
+     * @param vm
+     */
+    public static void tForLoop(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int sBx = Instruction.getSBx(i);
+
+        // 迭代器返回的第一个值不是 nil，把值拷贝到 _var（a + 1 => a），再跳转到循环体。
+        if (!vm.isNil(a + 1)) {
+            vm.copy(a + 1, a);
+            vm.addPC(sBx);
+        }
+    }
+
+    /* ========== 表指令（table）========== */
 
     /**
      * NEWTABLE 指令（iABC 模式）
      * 创建空表，将其放入指定寄存器。
-     * 
+     *
      * R(A) := {} (size = B,C)
      *
      * @param i
@@ -633,7 +674,7 @@ public class Instructions {
     /**
      * GETTABLE 指令（iABC 模式）
      * 根据键从表里取值，并放入目标寄存器中。
-     * 
+     *
      * R(A) := R(B)[RK(C)]
      *
      * @param i
@@ -657,7 +698,7 @@ public class Instructions {
      * SETTABLE 指令（iABC 模式）
      * 根据键往表里赋值。
      * 通用指令，每次只处理一个键值对，具体操作交给表处理，不关心实际写入的是哈希表还是数组部分。
-     * 
+     *
      * R(A)[RK(B)] := RK(C)
      *
      * @param i
@@ -677,7 +718,7 @@ public class Instructions {
     /**
      * SETLIST 指令（iABC 模式）
      * 为数组准备，用于按索引批量设置数组元素。
-     * 
+     *
      * R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
      *
      * @param i
@@ -765,7 +806,7 @@ public class Instructions {
     /**
      * CLOSURE 指令（iABx 模式）
      * 把当前函数的子函数原型实例化为闭包，放入由操作数 A 指定的寄存器中。
-     * 
+     *
      * R(A) := closure(KPROTO[Bx])
      *
      * @param i
@@ -823,7 +864,7 @@ public class Instructions {
     /**
      * CALL 指令（iABC 模式）
      * 调用函数，其中被调用函数、传递的参数值在寄存器中
-     * 
+     *
      * R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
      *
      * @param i
@@ -906,7 +947,7 @@ public class Instructions {
     /**
      * 处理 b == 0 的情况
      * 后半部分参数值已经在栈顶，只需要把函数和前半部分参数推入栈顶，再旋转栈即可。
-     * 
+     *
      * @param a
      * @param vm
      */
@@ -929,7 +970,7 @@ public class Instructions {
      * @param vm
      */
     private static void popResults(int a, int c, LuaVM vm) {
-        
+
         // c == 1，没有返回值。
         if (c == 1) {
             // no results
@@ -940,7 +981,7 @@ public class Instructions {
             for (int i = a + c - 2; i >= a; i--) {
                 vm.replace(i);
             }
-        } 
+        }
         // c == 0，需要把被调用函数的返回值全部返回，先把返回值留在栈顶，并推入一个整数作为标记。
         else {
             // leave results on stack
@@ -1033,4 +1074,5 @@ public class Instructions {
     private static int luaUpvalueIndex(int i) {
         return LUA_REGISTRYINDEX - i;
     }
+
 }

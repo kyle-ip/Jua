@@ -452,4 +452,13 @@ public interface LuaState {
      * @return
      */
     boolean next(int idx);
+
+    /**
+     * 从栈顶弹出一个值作为错误抛出。
+     *
+     * @return
+     */
+    int error();
+
+    ThreadStatus pCall(int nArgs, int nResults, int msgh);
 }
