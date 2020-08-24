@@ -12,17 +12,17 @@ import static com.ywh.jua.compiler.lexer.TokenKind.*;
  */
 public class Lexer {
 
-    // private static final Pattern reSpaces = Pattern.compile("^\\s+");
+     private static final Pattern RE_SPACES = Pattern.compile("^\\s+");
 
-    private static final Pattern reNewLine = Pattern.compile("\r\n|\n\r|\n|\r");
+    private static final Pattern RE_NEW_LINE = Pattern.compile("\r\n|\n\r|\n|\r");
 
-    private static final Pattern reIdentifier = Pattern.compile("^[_\\d\\w]+");
+    private static final Pattern RE_IDENTIFIER = Pattern.compile("^[_\\d\\w]+");
 
-    private static final Pattern reNumber = Pattern.compile("^0[xX][0-9a-fA-F]*(\\.[0-9a-fA-F]*)?([pP][+\\-]?[0-9]+)?|^[0-9]*(\\.[0-9]*)?([eE][+\\-]?[0-9]+)?");
+    private static final Pattern RE_NUMBER = Pattern.compile("^0[xX][0-9a-fA-F]*(\\.[0-9a-fA-F]*)?([pP][+\\-]?[0-9]+)?|^[0-9]*(\\.[0-9]*)?([eE][+\\-]?[0-9]+)?");
 
-    private static final Pattern reShortStr = Pattern.compile("(?s)(^'(\\\\\\\\|\\\\'|\\\\\\n|\\\\z\\s*|[^'\\n])*')|(^\"(\\\\\\\\|\\\\\"|\\\\\\n|\\\\z\\s*|[^\"\\n])*\")");
+    private static final Pattern RE_SHORT_STR = Pattern.compile("(?s)(^'(\\\\\\\\|\\\\'|\\\\\\n|\\\\z\\s*|[^'\\n])*')|(^\"(\\\\\\\\|\\\\\"|\\\\\\n|\\\\z\\s*|[^\"\\n])*\")");
 
-    private static final Pattern reOpeningLongBracket = Pattern.compile("^\\[=*\\[");
+    private static final Pattern RE_OPENING_LONG_BRACKET = Pattern.compile("^\\[=*\\[");
 
     /**
      * 源代码
@@ -39,9 +39,14 @@ public class Lexer {
      */
     private int line;
 
-    // to support lookahead
-	private Token cachedNextToken;
+    /**
+     * token 缓存（如果不希望直接跳过下一个 token，只是分析类型，则可以把它缓存下来、备份状态）
+     */
+    private Token cachedNextToken;
 
+    /**
+     * 备份行号
+     */
 	private int lineBackup;
 
     public Lexer(String chunk, String chunkName) {
@@ -50,6 +55,11 @@ public class Lexer {
         this.line = 1;
     }
 
+    /**
+     * 取行号
+     *
+     * @return
+     */
     public int line() {
     	return cachedNextToken != null ? lineBackup : line;
     }
@@ -60,7 +70,13 @@ public class Lexer {
         throw new RuntimeException(msg);
     }
 
+    /**
+     * 取缓存（下一个） token 的类型。
+     *
+     * @return
+     */
     public TokenKind LookAhead() {
+        // 如果缓存不存在，则跳过下一个 token，并备份 token 和行号。
         if (cachedNextToken == null) {
             lineBackup = line;
             cachedNextToken = nextToken();
@@ -80,13 +96,20 @@ public class Lexer {
         return token;
     }
 
+    /**
+     * 跳过空白字符和注释，取下一个 Token（行号和类型）。
+     *
+     * @return
+     */
     public Token nextToken() {
+        // 如果缓存不为空，则取缓存的 token，把缓存清空并返回。
         if (cachedNextToken != null) {
             Token token = cachedNextToken;
             cachedNextToken = null;
             return token;
         }
 
+        // 跳过空白字符
         skipWhiteSpaces();
         if (chunk.length() <= 0) {
             return new Token(line, TOKEN_EOF, "EOF");
@@ -202,15 +225,22 @@ public class Lexer {
                 break;
         }
 
+        // 判断当前字符
         char c = chunk.charAt(0);
+
+        // 处理数字字面量
         if (c == '.' || CharUtil.isDigit(c)) {
             return new Token(line, TOKEN_NUMBER, scanNumber());
         }
+
+        // 处理标识符和关键字
         if (c == '_' || CharUtil.isLetter(c)) {
             String id = scanIdentifier();
-            return Token.KEYWORDS.containsKey(id) ? new Token(line, Token.KEYWORDS.get(id), id): new Token(line, TOKEN_IDENTIFIER, id);
-        }
+            // 如果匹配到标识符，则取该标识符；否则取 TOKEN_IDENTIFIER。
+            return new Token(line, Token.KEYWORDS.getOrDefault(id, TOKEN_IDENTIFIER), id);
+            // return Token.KEYWORDS.containsKey(id) ? new Token(line, Token.KEYWORDS.get(id), id): new Token(line, TOKEN_IDENTIFIER, id);
 
+        }
         return error("unexpected symbol near %c", c);
     }
 
@@ -252,7 +282,7 @@ public class Lexer {
 
         // 长注释，跳过一个长字符串。
         if (chunk.startsWith("[")) {
-            if (chunk.find(reOpeningLongBracket) != null) {
+            if (chunk.find(RE_OPENING_LONG_BRACKET) != null) {
                 scanLongString();
                 return;
             }
@@ -264,14 +294,28 @@ public class Lexer {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     private String scanIdentifier() {
-        return scan(reIdentifier);
+        return scan(RE_IDENTIFIER);
     }
 
+    /**
+     * 提取数字
+     *
+     * @return
+     */
     private String scanNumber() {
-        return scan(reNumber);
+        return scan(RE_NUMBER);
     }
 
+    /**
+     *
+     * @param pattern
+     * @return
+     */
     private String scan(Pattern pattern) {
         String token = chunk.find(pattern);
         if (token == null) {
@@ -281,37 +325,63 @@ public class Lexer {
         return token;
     }
 
+    /**
+     * 截取长字符串
+     * Lua 中支持多种方式表示长字符串：
+     *      a = 'alo\n123"'
+     *      a = "alo\n123\""
+     *      '97lo\10\04923"'
+     *      a = [[alo
+     *      123"]]
+     *      a = [==[
+     *      alo
+     *      123"]==]
+     *
+     *
+     * @return
+     */
     private String scanLongString() {
-        String openingLongBracket = chunk.find(reOpeningLongBracket);
+        // 查找左右长方括号，如果找不到则表示存在语法错误。
+        String openingLongBracket = chunk.find(RE_OPENING_LONG_BRACKET);
         if (openingLongBracket == null) {
             return error("invalid long string delimiter near '%s'", chunk.substring(0, 2));
         }
 
+        // 截取字符串字面量，把左右长方括号去除，在 chunk 中跳过这个字符串。
         String closingLongBracket = openingLongBracket.replace("[", "]");
         int closingLongBracketIdx = chunk.indexOf(closingLongBracket);
         if (closingLongBracketIdx < 0) {
             return error("unfinished long string or comment");
         }
-
         String str = chunk.substring(openingLongBracket.length(), closingLongBracketIdx);
         chunk.next(closingLongBracketIdx + closingLongBracket.length());
 
-        str = reNewLine.matcher(str).replaceAll("\n");
+        // 把换行符序列统一转换成 \n
+        str = RE_NEW_LINE.matcher(str).replaceAll("\n");
         line += str.chars().filter(c -> c == '\n').count();
+
+        // 把第一个换行符去除
         if (str.startsWith("\n")) {
             str = str.substring(1);
         }
-
         return str;
     }
 
+    /**
+     * 截取短字符串
+     *
+     * @return
+     */
     private String scanShortString() {
-        String str = chunk.find(reShortStr);
+        // 查找短字符串
+        String str = chunk.find(RE_SHORT_STR);
         if (str != null) {
+            // 在 chunk 中跳过这个字符串
             chunk.next(str.length());
             str = str.substring(1, str.length() - 1);
+            // 处理转义符转义符
             if (str.indexOf('\\') >= 0) {
-                line += reNewLine.split(str).length - 1;
+                line += RE_NEW_LINE.split(str).length - 1;
                 str = new Escaper(str, this).escape();
             }
             return str;

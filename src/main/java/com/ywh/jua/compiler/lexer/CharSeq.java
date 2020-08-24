@@ -49,18 +49,34 @@ class CharSeq implements CharSequence {
         return str.startsWith(prefix, pos);
     }
 
+    /**
+     * 从 pos 开始，s 在 str 首次出现首字母位置
+     *
+     * @param s
+     * @return
+     */
     int indexOf(String s) {
         return str.indexOf(s, pos) - pos;
     }
 
+    /**
+     *
+     * @param beginIndex
+     * @param endIndex
+     * @return
+     */
     String substring(int beginIndex, int endIndex) {
         return str.substring(beginIndex + pos, endIndex + pos);
     }
 
+    /**
+     *
+     * @param pattern
+     * @return
+     */
     String find(Pattern pattern) {
         Matcher matcher = pattern.matcher(this);
-        return matcher.find()
-                ? matcher.group(0) : null;
+        return matcher.find()? matcher.group(0) : null;
     }
 
     /**

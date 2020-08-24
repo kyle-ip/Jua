@@ -7,14 +7,19 @@ import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.LocVar;
 import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
+import com.ywh.jua.compiler.lexer.Lexer;
+import com.ywh.jua.compiler.lexer.Token;
+import com.ywh.jua.compiler.lexer.TokenKind;
 import com.ywh.jua.state.LuaStateImpl;
 import com.ywh.jua.vm.OpCode;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static com.ywh.jua.api.LuaType.LUA_TNIL;
-import static com.ywh.jua.api.ThreadStatus.LUA_OK;
+import static com.ywh.jua.api.LuaType.*;
+import static com.ywh.jua.api.ThreadStatus.*;
+import static com.ywh.jua.compiler.lexer.TokenKind.*;
+import static com.ywh.jua.compiler.lexer.TokenKind.*;
 import static com.ywh.jua.vm.Instruction.*;
 import static com.ywh.jua.vm.OpArgMask.*;
 
@@ -29,28 +34,68 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "G:\\demo\\jua\\src\\test\\resources\\test.luac";
-        byte[] data = Files.readAllBytes(Paths.get(fileName));
-        Prototype proto = BinaryChunk.undump(data);
+        String fileName = "C:\\Project\\other-project\\jua\\src\\test\\resources\\hello_world.lua";
+
+//        byte[] data = Files.readAllBytes(Paths.get(fileName));
+//        Prototype proto = BinaryChunk.undump(data);
 //        list(proto);
 
 //        LuaState ls = new LuaStateImpl();
 //        ls.load(data, fileName, "b");
 //        ls.call(0, 0);
 
-        LuaState ls = new LuaStateImpl();
-        ls.register("print", Main::print);
-        ls.register("getmetatable", Main::getMetatable);
-        ls.register("setmetatable", Main::setMetatable);
-        ls.register("next", Main::next);
-        ls.register("pairs", Main::pairs);
-        ls.register("ipairs", Main::iPairs);
-        ls.register("error", Main::error);
-        ls.register("pcall", Main::pCall);
-        ls.load(data, fileName, "b");
-        ls.call(0, 0);
+//        LuaState ls = new LuaStateImpl();
+//        ls.register("print", Main::print);
+//        ls.register("getmetatable", Main::getMetatable);
+//        ls.register("setmetatable", Main::setMetatable);
+//        ls.register("next", Main::next);
+//        ls.register("pairs", Main::pairs);
+//        ls.register("ipairs", Main::iPairs);
+//        ls.register("error", Main::error);
+//        ls.register("pcall", Main::pCall);
+//        ls.load(data, fileName, "b");
+//        ls.call(0, 0);
+
+        byte[] data = Files.readAllBytes(Paths.get(fileName));
+        testLexer(new String(data), fileName);
     }
 
+    private static void testLexer(String chunk, String chunkName) {
+        Lexer lexer = new Lexer(chunk, chunkName);
+        for (;;) {
+            Token token = lexer.nextToken();
+            System.out.printf("[%2d] [%-10s] %s\n",
+                token.getLine(), kindToCategory(token.getKind()), token.getValue());
+            if (token.getKind() == TOKEN_EOF) {
+                break;
+            }
+        }
+    }
+
+    private static String kindToCategory(TokenKind kind) {
+        if (kind.ordinal() < TOKEN_SEP_SEMI.ordinal()) {
+            return "other";
+        }
+        if (kind.ordinal() <= TOKEN_SEP_RCURLY.ordinal()) {
+            return "separator";
+        }
+        if (kind.ordinal() <= TOKEN_OP_NOT.ordinal()) {
+            return "operator";
+        }
+        if (kind.ordinal() <= TOKEN_KW_WHILE.ordinal()) {
+            return "keyword";
+        }
+        if (kind == TOKEN_IDENTIFIER) {
+            return "identifier";
+        }
+        if (kind == TOKEN_NUMBER) {
+            return "number";
+        }
+        if (kind == TOKEN_STRING) {
+            return "string";
+        }
+        return "other";
+    }
 
     private static int  error(LuaState ls) {
         return ls.error();
