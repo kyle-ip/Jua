@@ -21,9 +21,31 @@ import java.util.Map;
  */
 class LuaTable {
 
+    /**
+     * 元表，存放类型关联函数。
+     */
+    LuaTable metatable;
+
+    /**
+     * 数组
+     */
     private List<Object> arr;
 
+    /**
+     * 哈希表
+     */
     private Map<Object, Object> map;
+
+    // ========== 迭代器 next 函数 ==========
+
+    /**
+     * 键表，存放表的键与下一个键的关系。
+     */
+    private Map<Object, Object> keys;
+
+    private Object lastKey;
+
+    private boolean changed;
 
     LuaTable(int nArr, int nRec) {
         if (nArr > 0) {
@@ -32,6 +54,16 @@ class LuaTable {
         if (nRec > 0) {
             map = new HashMap<>(nRec);
         }
+    }
+
+    /**
+     * 是否具备元字段（方法）
+     *
+     * @param fieldName
+     * @return
+     */
+    boolean hasMetafield(String fieldName) {
+        return metatable != null && metatable.get(fieldName) != null;
     }
 
     /**
@@ -125,6 +157,12 @@ class LuaTable {
         }
     }
 
+    /**
+     * Float 转换成 Integer
+     *
+     * @param key
+     * @return
+     */
     private Object floatToInteger(Object key) {
         if (key instanceof Double) {
             Double f = (Double) key;
@@ -135,6 +173,9 @@ class LuaTable {
         return key;
     }
 
+    /**
+     * 数组缩容（清理“洞”）
+     */
     private void shrinkArray() {
         for (int i = arr.size() - 1; i >= 0; i--) {
             if (arr.get(i) == null) {
@@ -143,6 +184,9 @@ class LuaTable {
         }
     }
 
+    /**
+     * 数组扩容
+     */
     private void expandArray() {
         for (int idx = arr.size() + 1; ; idx++) {
             Object val = map.remove((long) idx);
@@ -154,4 +198,60 @@ class LuaTable {
         }
     }
 
+    /**
+     * 取下一个键
+     *
+     * @param key
+     * @return
+     */
+    Object nextKey(Object key) {
+
+        // 如果传入 nil，表示遍历开始，需要把所有的键收集到 keys 中。
+        if (keys == null || (key == null && changed)) {
+            initKeys();
+            changed = false;
+        }
+
+        Object nextKey = keys.get(key);
+        if (nextKey == null && key != null && key != lastKey) {
+            throw new RuntimeException("invalid key to 'next'");
+        }
+
+        return nextKey;
+    }
+
+    /**
+     * keys 初始化，把数组或哈希表所有的键收集到 keys 中。
+     */
+    private void initKeys() {
+        if (keys == null) {
+            keys = new HashMap<>();
+        } else {
+            keys.clear();
+        }
+        Object key = null;
+
+        // 数组
+        if (arr != null) {
+            for (int i = 0; i < arr.size(); i++) {
+                if (arr.get(i) != null) {
+                    long nextKey = i + 1;
+                    keys.put(key, nextKey);
+                    key = nextKey;
+                }
+            }
+        }
+
+        // 哈希表
+        if (map != null) {
+            for (Object k : map.keySet()) {
+                Object v = map.get(k);
+                if (v != null) {
+                    keys.put(key, k);
+                    key = k;
+                }
+            }
+        }
+        lastKey = key;
+    }
 }

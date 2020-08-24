@@ -106,6 +106,23 @@ public class Arithmetic {
         null,
     };
 
+    private static final String[] metamethods = {
+        "__add",
+        "__sub",
+        "__mul",
+        "__mod",
+        "__pow",
+        "__div",
+        "__idiv",
+        "__band",
+        "__bor",
+        "__bxor",
+        "__shl",
+        "__shr",
+        "__unm",
+        "__bnot",
+    };
+
     /**
      * 运算
      *
@@ -114,7 +131,7 @@ public class Arithmetic {
      * @param op
      * @return
      */
-    static Object arith(Object a, Object b, ArithOp op) {
+    static Object arith(Object a, Object b, ArithOp op, LuaStateImpl ls) {
 
         // 通过枚举常量序数获取具体的运算函数
         LongBinaryOperator integerFunc = INTEGER_OPS[op.ordinal()];
@@ -128,7 +145,7 @@ public class Arithmetic {
             }
         }
         // 算数运算（arith）
-        else { //
+        else {
             if (integerFunc != null) {
                 if (a instanceof Long && b instanceof Long) {
                     return integerFunc.applyAsLong((Long) a, (Long) b);
@@ -139,7 +156,14 @@ public class Arithmetic {
                 return floatFunc.applyAsDouble(x, y);
             }
         }
-        return null;
+
+        // 当一个操作数不是（或无法转换为）数值时，查找元方法，如果存在则调用。
+        Object mm = ls.getMetamethod(a, b, metamethods[op.ordinal()]);
+        if (mm != null) {
+            return ls.callMetamethod(a, b, mm);
+        }
+
+        throw new RuntimeException("arithmetic error!");
     }
 
 }

@@ -25,7 +25,7 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "C:\\Project\\course-code\\luago-book\\code\\lua\\ch10\\luac.out";
+        String fileName = "G:\\demo\\jua\\src\\test\\resources\\vector2.luac";
         byte[] data = Files.readAllBytes(Paths.get(fileName));
 //        Prototype proto = BinaryChunk.undump(data);
 //        list(proto);
@@ -35,12 +35,14 @@ public class Main {
 //        ls.call(0, 0);
 
         LuaState ls = new LuaStateImpl();
-        ls.register("print", Main::javaPrint);
+        ls.register("print", Main::print);
+        ls.register("getmetatable", Main::getMetatable);
+        ls.register("setmetatable", Main::setMetatable);
         ls.load(data, fileName, "b");
         ls.call(0, 0);
     }
 
-    private static int javaPrint(LuaState ls) {
+    private static int print(LuaState ls) {
         int nArgs = ls.getTop();
         for (int i = 1; i <= nArgs; i++) {
             if (ls.isBoolean(i)) {
@@ -56,6 +58,20 @@ public class Main {
         }
         System.out.println();
         return 0;
+    }
+
+
+
+    private static int getMetatable(LuaState ls) {
+        if (!ls.getMetatable(1)) {
+            ls.pushNil();
+        }
+        return 1;
+    }
+
+    private static int setMetatable(LuaState ls) {
+        ls.setMetatable(1);
+        return 1;
     }
 
 //    /**

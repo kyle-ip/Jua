@@ -400,7 +400,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void arith(ArithOp op) {
         Object b = stack.pop();
         Object a = op != LUA_OPUNM && op != LUA_OPBNOT ? stack.pop() : b;
-        Object result = Arithmetic.arith(a, b, op);
+        Object result = Arithmetic.arith(a, b, op, this);
         if (result != null) {
             stack.push(result);
         } else {
@@ -425,15 +425,15 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object a = stack.get(idx1), b = stack.get(idx2);
         switch (op) {
             case LUA_OPEQ:
-                return Comparison.eq(a, b);
+                return Comparison.eq(a, b, this);
             case LUA_OPLT:
-                return Comparison.lt(a, b);
+                return Comparison.lt(a, b, this);
             case LUA_OPLE:
-                return Comparison.le(a, b);
+                return Comparison.le(a, b, this);
             case LUA_OPGT:
-                return !Comparison.le(a, b);
+                return !Comparison.le(a, b, this);
             case LUA_OPGE:
-                return !Comparison.lt(a, b);
+                return !Comparison.lt(a, b, this);
             default:
                 throw new RuntimeException("invalid compare op!");
         }
@@ -469,7 +469,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public LuaType getTable(int idx) {
         Object t = stack.get(idx);
         Object k = stack.pop();
-        return getTable(t, k);
+        return getTable(t, k, false);
     }
 
     /**
@@ -482,7 +482,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public LuaType getField(int idx, String k) {
         Object t = stack.get(idx);
-        return getTable(t, k);
+        return getTable(t, k, false);
     }
 
     /**
@@ -495,7 +495,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public LuaType getI(int idx, long i) {
         Object t = stack.get(idx);
-        return getTable(t, i);
+        return getTable(t, i, false);
     }
 
     /**
@@ -503,13 +503,32 @@ public class LuaStateImpl implements LuaState, LuaVM {
      *
      * @param t
      * @param k
+     * @param raw
      * @return
      */
-    private LuaType getTable(Object t, Object k) {
+    private LuaType getTable(Object t, Object k, boolean raw) {
         if (t instanceof LuaTable) {
-            Object v = ((LuaTable) t).get(k);
-            stack.push(v);
-            return LuaValue.typeOf(v);
+            LuaTable tbl = (LuaTable) t;
+            Object v = tbl.get(k);
+            // __index 元方法对象既可以是函数（t[k] 表示以 t 和 k 为参数调用该函数）也可以是表（以 k 为键访问 t）。
+            if (raw || v != null || !tbl.hasMetafield("__index")) {
+                stack.push(v);
+                return LuaValue.typeOf(v);
+            }
+        }
+        // raw 字段为 true，则忽略元方法。
+        // 如果 t[k] 的 t 是表，且键已经在表中，或者需要忽略元方法，或者表没有索引元方法，则维持原来逻辑，否则尝试调用元方法。
+        if (!raw) {
+            Object mf = getMetafield(t, "__index");
+            if (mf != null) {
+                if (mf instanceof LuaTable) {
+                    return getTable(mf, k, false);
+                } else if (mf instanceof Closure) {
+                    Object v = callMetamethod(t, k, mf);
+                    stack.push(v);
+                    return LuaValue.typeOf(v);
+                }
+            }
         }
         throw new RuntimeException("not a table!"); // todo
     }
@@ -526,7 +545,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object t = stack.get(idx);
         Object v = stack.pop();
         Object k = stack.pop();
-        setTable(t, k, v);
+        setTable(t, k, v, false);
     }
 
     /**
@@ -539,7 +558,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void setField(int idx, String k) {
         Object t = stack.get(idx);
         Object v = stack.pop();
-        setTable(t, k, v);
+        setTable(t, k, v, false);
     }
 
     /**
@@ -552,13 +571,42 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void setI(int idx, long i) {
         Object t = stack.get(idx);
         Object v = stack.pop();
-        setTable(t, i, v);
+        setTable(t, i, v, false);
     }
 
-    private void setTable(Object t, Object k, Object v) {
+    /**
+     *
+     * @param t
+     * @param k
+     * @param v
+     * @param raw
+     */
+    private void setTable(Object t, Object k, Object v, boolean raw) {
+        // 区别于“__index”，“__newindex” 用于当执行 t[k] = v 时，如果 t 不是表，或者 k 在表中不存在。
+
         if (t instanceof LuaTable) {
-            ((LuaTable) t).put(k, v);
-            return;
+            LuaTable tbl = (LuaTable) t;
+            if (raw || tbl.get(k) != null || !tbl.hasMetafield("__newindex")) {
+                tbl.put(k, v);
+                return;
+            }
+        }
+        if (!raw) {
+            Object mf = getMetafield(t, "__newindex");
+            if (mf != null) {
+                if (mf instanceof LuaTable) {
+                    setTable(mf, k, v, false);
+                    return;
+                }
+                if (mf instanceof Closure) {
+                    stack.push(mf);
+                    stack.push(t);
+                    stack.push(k);
+                    stack.push(v);
+                    call(3, 0);
+                    return;
+                }
+            }
         }
         throw new RuntimeException("not a table!");
     }
@@ -614,13 +662,26 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
         // 取出被调用函数
         Object val = stack.get(-(nArgs + 1));
-        if (val instanceof Closure) {
-            Closure c = (Closure) val;
+        Object f = val instanceof Closure ? val : null;
+
+        // 试图“调用”一个非函数类型（闭包）的值，则会判断它是否存在元方法；
+        // 如果存在，则以该值为第一个参数，后跟原方法调用的其他参数来调用元方法。
+        if (f == null) {
+            Object mf = getMetafield(val, "__call");
+            if (mf != null && mf instanceof Closure) {
+                stack.push(f);
+                insert(-(nArgs + 2));
+                nArgs += 1;
+                f = mf;
+            }
+        }
+
+        if (f != null) {
+            Closure c = (Closure) f;
             // 执行调用
             if (c.proto != null) {
                 callLuaClosure(nArgs, nResults, c);
-            }
-            if (c.javaFunc != null) {
+            } else {
                 callJavaClosure(nArgs, nResults, c);
             }
         } else {
@@ -721,25 +782,38 @@ public class LuaStateImpl implements LuaState, LuaVM {
     /* miscellaneous functions */
 
     /**
-     * 求长度：
+     * 求长度
      * 取指定索引的值，求出其长度后推入栈顶。
      *
      * @param idx
      */
     @Override
     public void len(int idx) {
+
         Object val = stack.get(idx);
+        // 该值为字符串，则求长度后推入栈顶。
         if (val instanceof String) {
             pushInteger(((String) val).length());
-        } else if (val instanceof LuaTable) {
-            pushInteger(((LuaTable) val).length());
-        } else {
-            throw new RuntimeException("length error!");
+            return;
         }
+
+        // 该值的类型存在对应的长度元方法。
+        Object mm = getMetamethod(val, val, "__len");
+        if (mm != null) {
+            stack.push(callMetamethod(val, val, mm));
+            return;
+        }
+
+        // 该值为表。
+        if (val instanceof LuaTable) {
+            pushInteger(((LuaTable) val).length());
+            return;
+        }
+        throw new RuntimeException("length error!");
     }
 
     /**
-     * 拼接：
+     * 拼接
      * 从栈顶弹出 n 个值，对这些值进行拼接，再把结果推入栈顶。
      * 当 n 为 0，则推入空串；
      * 要求这 n 个值都是字符串。
@@ -752,6 +826,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
             stack.push("");
         } else if (n >= 2) {
             for (int i = 1; i < n; i++) {
+                // 栈顶两个值都为字符串。
                 if (isString(-1) && isString(-2)) {
                     String s2 = toString(-1);
                     String s1 = toString(-2);
@@ -759,6 +834,16 @@ public class LuaStateImpl implements LuaState, LuaVM {
                     pushString(s1 + s2);
                     continue;
                 }
+
+                // 栈顶两个值至少一个不为字符串，查找类型对应的拼接元方法。
+                Object b = stack.pop();
+                Object a = stack.pop();
+                Object mm = getMetamethod(a, b, "__concat");
+                if (mm != null) {
+                    stack.push(callMetamethod(a, b, mm));
+                    continue;
+                }
+
                 throw new RuntimeException("concatenation error!");
             }
         }
@@ -952,7 +1037,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     * 把全局环境推入栈顶。
+     * 把全局环境推入栈顶
      */
     @Override
     public void pushGlobalTable() {
@@ -969,7 +1054,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public LuaType getGlobal(String name) {
         // 从注册表中取出全局环境。
         Object t = registry.get(LUA_RIDX_GLOBALS);
-        return getTable(t, name);
+        return getTable(t, name, false);
     }
 
     /**
@@ -981,7 +1066,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void setGlobal(String name) {
         Object t = registry.get(LUA_RIDX_GLOBALS);
         Object v = stack.pop();
-        setTable(t, name, v);
+        setTable(t, name, v, false);
     }
 
     /**
@@ -994,5 +1079,230 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void register(String name, JavaFunction f) {
         pushJavaFunction(f);
         setGlobal(name);
+    }
+
+    /**
+     * 取给定索引的值关联的元表置于栈顶。
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public boolean getMetatable(int idx) {
+        Object val = stack.get(idx);
+        Object mt = getMetatable(val);
+        if (mt != null) {
+            stack.push(mt);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 设置指定索引的值为栈顶的元表
+     *
+     * @param idx
+     */
+    @Override
+    public void setMetatable(int idx) {
+        Object val = stack.get(idx);
+        Object mtVal = stack.pop();
+        if (mtVal == null) {
+            setMetatable(val, null);
+        } else if (mtVal instanceof LuaTable) {
+            setMetatable(val, (LuaTable) mtVal);
+        } else {
+            // TODO
+            throw new RuntimeException("table expected!");
+        }
+    }
+
+    /**
+     *
+     * @param val
+     * @return
+     */
+    private LuaTable getMetatable(Object val) {
+
+        if (val instanceof LuaTable) {
+            return ((LuaTable) val).metatable;
+        }
+        String key = "_MT" + LuaValue.typeOf(val);
+        Object mt = registry.get(key);
+        return mt != null ? (LuaTable) mt : null;
+    }
+
+    /**
+     *
+     * @param val
+     * @param mt
+     */
+    private void setMetatable(Object val, LuaTable mt) {
+        // 判断值是否为表，是则直接修改其元表字段，否则根据变量类型把元表存储在注册表中。
+        if (val instanceof LuaTable) {
+            ((LuaTable) val).metatable = mt;
+            return;
+        }
+        String key = "_MT" + LuaValue.typeOf(val);
+        registry.put(key, mt);
+    }
+
+    /**
+     * 获取元字段
+     *
+     * @param val
+     * @param fieldName
+     * @return
+     */
+    private Object getMetafield(Object val, String fieldName) {
+        LuaTable mt = getMetatable(val);
+        return mt != null ? mt.get(fieldName) : null;
+    }
+
+    /**
+     * 获取元方法
+     *
+     * @param a
+     * @param b
+     * @param mmName
+     * @return
+     */
+    Object getMetamethod(Object a, Object b, String mmName) {
+        Object mm = getMetafield(a, mmName);
+        if (mm == null) {
+            mm = getMetafield(b, mmName);
+        }
+        return mm;
+    }
+
+    /**
+     * 调用元方法
+     *
+     * @param a
+     * @param b
+     * @param mm
+     * @return
+     */
+    Object callMetamethod(Object a, Object b, Object mm) {
+        //stack.check(4)
+        stack.push(mm);
+        stack.push(a);
+        stack.push(b);
+        // 元方法两个参数，一个返回值/
+        call(2, 1);
+        return stack.pop();
+    }
+
+
+    /**
+     * 取长度（忽略元方法）
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public int rawLen(int idx) {
+        Object val = stack.get(idx);
+        if (val instanceof String) {
+            return ((String) val).length();
+        } else if (val instanceof LuaTable) {
+            return ((LuaTable) val).length();
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * 判断相等（忽略元方法）
+     *
+     * @param idx1
+     * @param idx2
+     * @return
+     */
+    @Override
+    public boolean rawEqual(int idx1, int idx2) {
+        if (!stack.isValid(idx1) || !stack.isValid(idx2)) {
+            return false;
+        }
+
+        Object a = stack.get(idx1);
+        Object b = stack.get(idx2);
+        return Comparison.eq(a, b, null);
+    }
+
+    /**
+     * 从表中取值（忽略元方法）
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public LuaType rawGet(int idx) {
+        Object t = stack.get(idx);
+        Object k = stack.pop();
+        return getTable(t, k, true);
+    }
+
+    /**
+     * 从表中取整型值（忽略元方法）
+     *
+     * @param idx
+     * @param i
+     * @return
+     */
+    @Override
+    public LuaType rawGetI(int idx, long i) {
+        Object t = stack.get(idx);
+        return getTable(t, i, true);
+    }
+
+    /**
+     * 从表中设置值（忽略元方法）
+     *
+     * @param idx
+     */
+    @Override
+    public void rawSet(int idx) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        Object k = stack.pop();
+        setTable(t, k, v, true);
+    }
+
+    /**
+     * 从表中设置整型值（忽略元方法）
+     *
+     * @param idx
+     * @param i
+     */
+    @Override
+    public void rawSetI(int idx, long i) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        setTable(t, i, v, true);
+    }
+
+    /**
+     * 根据键迭代取表的下一个键值对
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public boolean next(int idx) {
+        Object val = stack.get(idx);
+        if (val instanceof LuaTable) {
+            LuaTable t = (LuaTable) val;
+            Object key = stack.pop();
+            Object nextKey = t.nextKey(key);
+            if (nextKey != null) {
+                stack.push(nextKey);
+                stack.push(t.get(nextKey));
+                return true;
+            }
+            return false;
+        }
+        throw new RuntimeException("table expected!");
     }
 }

@@ -137,7 +137,7 @@ public interface LuaState {
      */
     LuaType type(int idx);
 
-    // 判断指定索引位置的值的类型
+    // ========== 判断指定索引位置的值的类型 ==========
 
     boolean isNone(int idx);
 
@@ -159,7 +159,7 @@ public interface LuaState {
 
     boolean isFunction(int idx);
 
-    // 转换索引位置的值的类型
+    // ========== 转换索引位置的值的类型并返回 ==========
 
     boolean toBoolean(int idx);
 
@@ -173,7 +173,7 @@ public interface LuaState {
 
     String toString(int idx);
 
-    // 指定类型的值入栈
+    // ========== 指定类型的值入栈 ==========
 
     /* push functions (Go -> stack); */
     void pushNil();
@@ -208,23 +208,29 @@ public interface LuaState {
     boolean compare(int idx1, int idx2, CmpOp op);
 
     /**
-     *
+     * 创建空表，将其推入栈顶。
      */
     void newTable();
 
     /**
+     * 创建空表（指定数组和哈希表的初始容量），将其推入栈顶。
+     *
      * @param nArr
      * @param nRec
      */
     void createTable(int nArr, int nRec);
 
     /**
+     * 根据索引从栈中取表，再根据从栈顶弹出的键取值（并将其推入栈顶）。
+     *
      * @param idx
      * @return
      */
     LuaType getTable(int idx);
 
     /**
+     * {@link #getTable}，键为字符串。
+     *
      * @param idx
      * @param k
      * @return
@@ -232,6 +238,8 @@ public interface LuaState {
     LuaType getField(int idx, String k);
 
     /**
+     * {@link #getTable}，键为整数。
+     *
      * @param idx
      * @param i
      * @return
@@ -241,24 +249,57 @@ public interface LuaState {
     /* set functions (stack -> Lua) */
 
     /**
+     * 根据索引取出指定的表，从栈中先后弹出值、键，把键值对设置到表中。
+     *
      * @param idx
      */
     void setTable(int idx);
 
     /**
+     * 根据索引取出指定的表，从栈中弹出值，把键值对设置到表中（字符串）。
+     *
      * @param idx
      * @param k
      */
     void setField(int idx, String k);
 
     /**
+     * 根据索引取出指定的表，从栈中弹出值，把键值对设置到表中（整数）。
+     *
      * @param idx
      * @param i
      */
     void setI(int idx, long i);
 
+    /**
+     * 加载二进制 chunk 或 Lua 脚本，把主函数原型实例化为闭包并推入栈顶。
+     *
+     * 通过参数 mode（可选 “b”、“t”、“bt”）选定加载模式：
+     * b：如果加载二进制 chunk，则只需读文件、解析函数原型、实例化为闭包、推入栈顶；
+     * t：如果加载文本 Lua 脚本，则先进行编译。
+     * bt：都可以，根据实际情况处理。
+     *
+     * 如果 load 方法无法加载 chunk，则要在栈顶留下一条错误消息。
+     * 返回一个状态码，0 表示成功，其他表示失败。
+     *
+     * @param chunk
+     * @param chunkName
+     * @param mode
+     * @return
+     */
     ThreadStatus load(byte[] chunk, String chunkName, String mode);
 
+    /**
+     * 调用 Lua 函数
+     * 在执行之前，必须先把被调用函数入栈，然后把参数值依次入栈；
+     * call 方法调用结束后，参数值和函数会被弹出，取而代之的是指定数量的返回值。
+     *
+     * 接收两个参数，其一是准备传递给被调用函数的参数数量（同时隐含给出被调用函数在栈中的位置）；
+     * 其二是需要的返回值数量（多退少补），-1 表示返回值全部留在栈顶。
+     *
+     * @param nArgs
+     * @param nResults
+     */
     void call(int nArgs, int nResults);
 
     /* miscellaneous functions */
@@ -304,13 +345,111 @@ public interface LuaState {
      */
     void pushJavaFunction(JavaFunction f);
 
+    /**
+     * 把Java 函数转换成 Java 闭包推入栈顶（捕获 Upvalue）。
+     *
+     * @param f
+     * @param n
+     */
     void pushJavaClosure(JavaFunction f, int n);
 
+    /**
+     * 把全局环境推入栈顶
+     */
     void pushGlobalTable();
 
+    /**
+     * 获取全局变量
+     *
+     * @param name
+     * @return
+     */
     LuaType getGlobal(String name);
 
+    /**
+     * 设置全局变量（值为栈顶的）
+     *
+     * @param name
+     */
     void setGlobal(String name);
 
+    /**
+     * 给全局环境设置 Java 函数（值）
+     *
+     * @param name
+     * @param f
+     */
     void register(String name, JavaFunction f);
+
+    /**
+     * 取给定索引的值关联的元表置于栈顶。
+     *
+     * @param idx
+     * @return
+     */
+    boolean getMetatable(int idx);
+
+    /**
+     * 设置指定索引的值为栈顶的元表
+     *
+     * @param idx
+     */
+    void setMetatable(int idx);
+
+    /**
+     * 取长度（忽略元方法）
+     *
+     * @param idx
+     * @return
+     */
+    int rawLen(int idx);
+
+    /**
+     * 判断相等（忽略元方法）
+     *
+     * @param idx1
+     * @param idx2
+     * @return
+     */
+    boolean rawEqual(int idx1, int idx2);
+
+    /**
+     * 从表中取值（忽略元方法）
+     *
+     * @param idx
+     * @return
+     */
+    LuaType rawGet(int idx);
+
+    /**
+     * 从表中取整型值（忽略元方法）
+     *
+     * @param idx
+     * @param i
+     * @return
+     */
+    LuaType rawGetI(int idx, long i);
+
+    /**
+     * 从表中设置值（忽略元方法）
+     *
+     * @param idx
+     */
+    void rawSet(int idx);
+
+    /**
+     * 从表中设置整型值（忽略元方法）
+     *
+     * @param idx
+     * @param i
+     */
+    void rawSetI(int idx, long i);
+
+    /**
+     * 根据键迭代取表的下一个键值对
+     *
+     * @param idx
+     * @return
+     */
+    boolean next(int idx);
 }
