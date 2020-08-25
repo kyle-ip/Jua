@@ -634,7 +634,6 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public ThreadStatus load(byte[] chunk, String chunkName, String mode) {
 
-        // TODO
         // 解析字节数组为函数原型，把实例化为闭包的函数原型推入栈顶。
         Prototype proto = isBinaryChunk(chunk) ? undump(chunk) : compile(new String(chunk), chunkName);
         Closure closure = new Closure(proto);

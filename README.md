@@ -21,16 +21,16 @@ The purpose of building this project is to learn:
 - [x] Virtual Machine: (Instruction Set & Runner)
 - [x] Compiler: Lexer, AST Parser & Code Generator
 - [ ] Standard Library
-    - [ ] Math
-    - [ ] Table
-    - [ ] String
-    - [ ] UTF-8
+    - [ ] math
+    - [ ] string
+    - [ ] utf8
+    - [ ] table
+    - [ ] IO
     - [ ] OS
-    - [ ] ...
+    - [ ] package
+    - [ ] coroutine
+    - [ ] debug
 - [ ] Metaprogramming
-- [ ] Package & Module
-- [ ] Coroutine
-- [ ] Thread
 
 ### Instruction Set (completed)
 

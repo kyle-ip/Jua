@@ -12,6 +12,7 @@ import com.ywh.jua.compiler.lexer.Lexer;
 import com.ywh.jua.compiler.lexer.Token;
 import com.ywh.jua.compiler.lexer.TokenKind;
 import com.ywh.jua.compiler.parser.Parser;
+import com.ywh.jua.state.LuaStateImpl;
 import com.ywh.jua.vm.OpCode;
 
 import java.nio.file.Files;
@@ -34,9 +35,9 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.lua";
+        String fileName = "C:\\Project\\other-project\\jua\\src\\test\\resources\\hello_world.lua";
 
-//        byte[] data = Files.readAllBytes(Paths.get(fileName));
+        byte[] data = Files.readAllBytes(Paths.get(fileName));
 //        Prototype proto = BinaryChunk.undump(data);
 //        list(proto);
 
@@ -44,21 +45,21 @@ public class Main {
 //        ls.load(data, fileName, "b");
 //        ls.call(0, 0);
 
-//        LuaState ls = new LuaStateImpl();
-//        ls.register("print", Main::print);
-//        ls.register("getmetatable", Main::getMetatable);
-//        ls.register("setmetatable", Main::setMetatable);
-//        ls.register("next", Main::next);
-//        ls.register("pairs", Main::pairs);
-//        ls.register("ipairs", Main::iPairs);
-//        ls.register("error", Main::error);
-//        ls.register("pcall", Main::pCall);
-//        ls.load(data, fileName, "b");
-//        ls.call(0, 0);
+        LuaState ls = new LuaStateImpl();
+        ls.register("print", Main::print);
+        ls.register("getmetatable", Main::getMetatable);
+        ls.register("setmetatable", Main::setMetatable);
+        ls.register("next", Main::next);
+        ls.register("pairs", Main::pairs);
+        ls.register("ipairs", Main::iPairs);
+        ls.register("error", Main::error);
+        ls.register("pcall", Main::pCall);
+        ls.load(data, fileName, "bt");
+        ls.call(0, 0);
 
-        byte[] data = Files.readAllBytes(Paths.get(fileName));
+//        byte[] data = Files.readAllBytes(Paths.get(fileName));
 //        testLexer(new String(data), fileName);
-        testParser(new String(data), fileName);
+//        testParser(new String(data), fileName);
     }
 
     private static void testParser(String chunk, String chunkName) {
@@ -77,6 +78,7 @@ public class Main {
                 break;
             }
         }
+        System.out.println();
     }
 
     private static String kindToCategory(TokenKind kind) {
