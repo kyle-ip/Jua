@@ -9,7 +9,7 @@ A simple Lua written in Java.
 
 Jua is a toy Lua (5.3) implementation written in Java. 
 
-The goals of this project is learning:
+The purpose of building this project is to learn:
 
 - Data Structure
 - The Principles of Register-based Virtual Machine
