@@ -12,7 +12,7 @@ import static com.ywh.jua.compiler.lexer.TokenKind.*;
  */
 public class Lexer {
 
-     private static final Pattern RE_SPACES = Pattern.compile("^\\s+");
+    // private static final Pattern RE_SPACES = Pattern.compile("^\\s+");
 
     private static final Pattern RE_NEW_LINE = Pattern.compile("\r\n|\n\r|\n|\r");
 
@@ -71,7 +71,7 @@ public class Lexer {
     }
 
     /**
-     * 取缓存（下一个） token 的类型。
+     * 前瞻，取（缓存）下一个 token 的类型。
      *
      * @return
      */
@@ -88,6 +88,12 @@ public class Lexer {
         return nextTokenOfKind(TOKEN_IDENTIFIER);
     }
 
+    /**
+     * 判断下一个 token 是否符合类型
+     *
+     * @param kind
+     * @return
+     */
     public Token nextTokenOfKind(TokenKind kind) {
         Token token = nextToken();
         if (token.getKind() != kind) {
@@ -117,35 +123,50 @@ public class Lexer {
 
         switch (chunk.charAt(0)) {
             case ';':
-                chunk.next(1); return new Token(line, TOKEN_SEP_SEMI,   ";");
+                chunk.next(1);
+                return new Token(line, TOKEN_SEP_SEMI,   ";");
             case ',':
-                chunk.next(1); return new Token(line, TOKEN_SEP_COMMA,  ",");
+                chunk.next(1);
+                return new Token(line, TOKEN_SEP_COMMA,  ",");
             case '(':
-                chunk.next(1); return new Token(line, TOKEN_SEP_LPAREN, "(");
+                chunk.next(1);
+                return new Token(line, TOKEN_SEP_LPAREN, "(");
             case ')':
-                chunk.next(1); return new Token(line, TOKEN_SEP_RPAREN, ")");
+                chunk.next(1);
+                return new Token(line, TOKEN_SEP_RPAREN, ")");
             case ']':
-                chunk.next(1); return new Token(line, TOKEN_SEP_RBRACK, "]");
+                chunk.next(1);
+                return new Token(line, TOKEN_SEP_RBRACK, "]");
             case '{':
-                chunk.next(1); return new Token(line, TOKEN_SEP_LCURLY, "{");
+                chunk.next(1);
+                return new Token(line, TOKEN_SEP_LCURLY, "{");
             case '}':
-                chunk.next(1); return new Token(line, TOKEN_SEP_RCURLY, "}");
+                chunk.next(1);
+                return new Token(line, TOKEN_SEP_RCURLY, "}");
             case '+':
-                chunk.next(1); return new Token(line, TOKEN_OP_ADD,     "+");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_ADD,     "+");
             case '-':
-                chunk.next(1); return new Token(line, TOKEN_OP_MINUS,   "-");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_MINUS,   "-");
             case '*':
-                chunk.next(1); return new Token(line, TOKEN_OP_MUL,     "*");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_MUL,     "*");
             case '^':
-                chunk.next(1); return new Token(line, TOKEN_OP_POW,     "^");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_POW,     "^");
             case '%':
-                chunk.next(1); return new Token(line, TOKEN_OP_MOD,     "%");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_MOD,     "%");
             case '&':
-                chunk.next(1); return new Token(line, TOKEN_OP_BAND,    "&");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_BAND,    "&");
             case '|':
-                chunk.next(1); return new Token(line, TOKEN_OP_BOR,     "|");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_BOR,     "|");
             case '#':
-                chunk.next(1); return new Token(line, TOKEN_OP_LEN,     "#");
+                chunk.next(1);
+                return new Token(line, TOKEN_OP_LEN,     "#");
             case ':':
                 if (chunk.startsWith("::")) {
                     chunk.next(2);

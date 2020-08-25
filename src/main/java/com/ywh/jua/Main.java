@@ -1,24 +1,24 @@
 package com.ywh.jua;
 
+import com.google.gson.GsonBuilder;
 import com.ywh.jua.api.LuaState;
 import com.ywh.jua.api.LuaType;
 import com.ywh.jua.api.ThreadStatus;
-import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.LocVar;
 import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
+import com.ywh.jua.compiler.ast.Block;
 import com.ywh.jua.compiler.lexer.Lexer;
 import com.ywh.jua.compiler.lexer.Token;
 import com.ywh.jua.compiler.lexer.TokenKind;
-import com.ywh.jua.state.LuaStateImpl;
+import com.ywh.jua.compiler.parser.Parser;
 import com.ywh.jua.vm.OpCode;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static com.ywh.jua.api.LuaType.*;
-import static com.ywh.jua.api.ThreadStatus.*;
-import static com.ywh.jua.compiler.lexer.TokenKind.*;
+import static com.ywh.jua.api.LuaType.LUA_TNIL;
+import static com.ywh.jua.api.ThreadStatus.LUA_OK;
 import static com.ywh.jua.compiler.lexer.TokenKind.*;
 import static com.ywh.jua.vm.Instruction.*;
 import static com.ywh.jua.vm.OpArgMask.*;
@@ -34,7 +34,7 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "C:\\Project\\other-project\\jua\\src\\test\\resources\\hello_world.lua";
+        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.lua";
 
 //        byte[] data = Files.readAllBytes(Paths.get(fileName));
 //        Prototype proto = BinaryChunk.undump(data);
@@ -57,7 +57,14 @@ public class Main {
 //        ls.call(0, 0);
 
         byte[] data = Files.readAllBytes(Paths.get(fileName));
-        testLexer(new String(data), fileName);
+//        testLexer(new String(data), fileName);
+        testParser(new String(data), fileName);
+    }
+
+    private static void testParser(String chunk, String chunkName) {
+        Block block = Parser.parse(chunk, chunkName);
+        String json = new GsonBuilder().setPrettyPrinting().create().toJson(block);
+        System.out.println(json);
     }
 
     private static void testLexer(String chunk, String chunkName) {

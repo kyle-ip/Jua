@@ -14,7 +14,7 @@ import com.ywh.jua.compiler.ast.Stat;
 public class DoStat extends Stat {
 
     /**
-     * 语句块
+     * 块
      */
     private Block block;
 

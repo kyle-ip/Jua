@@ -8,9 +8,23 @@ import com.ywh.jua.number.LuaNumber;
 
 import static com.ywh.jua.compiler.lexer.TokenKind.TOKEN_OP_POW;
 
+/**
+ * 优化器
+ * 如果运算符表达式的值可以在编译期算出，则 Lua 编译器会完全把它优化。
+ *
+ * @author ywh
+ * @since 2020/8/25 11:26
+ */
 class Optimizer {
 
+    /**
+     * 逻辑或
+     *
+     * @param exp
+     * @return
+     */
     static Exp optimizeLogicalOr(BinopExp exp) {
+        // 短路计算
         if (isTrue(exp.getExp1())) {
             return exp.getExp1(); // true or x => true
         }
@@ -20,7 +34,14 @@ class Optimizer {
         return exp;
     }
 
+    /**
+     * 逻辑且
+     *
+     * @param exp
+     * @return
+     */
     static Exp optimizeLogicalAnd(BinopExp exp) {
+        // 短路计算
         if (isFalse(exp.getExp1())) {
             return exp.getExp1(); // false and x => false
         }
@@ -30,17 +51,28 @@ class Optimizer {
         return exp;
     }
 
+    /**
+     * 按位
+     *
+     * @param exp
+     * @return
+     */
     static Exp optimizeBitwiseBinaryOp(BinopExp exp) {
         Long i = castToInteger(exp.getExp1());
         if (i != null) {
             Long j = castToInteger(exp.getExp2());
             if (j != null) {
                 switch (exp.getOp()) {
-                    case TOKEN_OP_BAND: return new IntegerExp(exp.getLine(), i & j);
-                    case TOKEN_OP_BOR:  return new IntegerExp(exp.getLine(), i | j);
-                    case TOKEN_OP_BXOR: return new IntegerExp(exp.getLine(), i ^ j);
-                    case TOKEN_OP_SHL:  return new IntegerExp(exp.getLine(), LuaMath.shiftLeft(i, j));
-                    case TOKEN_OP_SHR:  return new IntegerExp(exp.getLine(), LuaMath.shiftRight(i, j));
+                    case TOKEN_OP_BAND:
+                        return new IntegerExp(exp.getLine(), i & j);
+                    case TOKEN_OP_BOR:
+                        return new IntegerExp(exp.getLine(), i | j);
+                    case TOKEN_OP_BXOR:
+                        return new IntegerExp(exp.getLine(), i ^ j);
+                    case TOKEN_OP_SHL:
+                        return new IntegerExp(exp.getLine(), LuaMath.shiftLeft(i, j));
+                    case TOKEN_OP_SHR:
+                        return new IntegerExp(exp.getLine(), LuaMath.shiftRight(i, j));
                     default:
                         break;
                 }
@@ -49,15 +81,24 @@ class Optimizer {
         return exp;
     }
 
+    /**
+     * 四则运算
+     *
+     * @param exp
+     * @return
+     */
     static Exp optimizeArithBinaryOp(BinopExp exp) {
         if (exp.getExp1() instanceof IntegerExp
                 && exp.getExp2() instanceof IntegerExp) {
             IntegerExp x = (IntegerExp) exp.getExp1();
             IntegerExp y = (IntegerExp) exp.getExp2();
             switch (exp.getOp()) {
-                case TOKEN_OP_ADD: return new IntegerExp(exp.getLine(), x.getVal() + y.getVal());
-                case TOKEN_OP_SUB: return new IntegerExp(exp.getLine(), x.getVal() - y.getVal());
-                case TOKEN_OP_MUL: return new IntegerExp(exp.getLine(), x.getVal() * y.getVal());
+                case TOKEN_OP_ADD:
+                    return new IntegerExp(exp.getLine(), x.getVal() + y.getVal());
+                case TOKEN_OP_SUB:
+                    return new IntegerExp(exp.getLine(), x.getVal() - y.getVal());
+                case TOKEN_OP_MUL:
+                    return new IntegerExp(exp.getLine(), x.getVal() * y.getVal());
                 case TOKEN_OP_IDIV:
                     if (y.getVal() != 0) {
                         return new IntegerExp(exp.getLine(), Math.floorDiv(x.getVal(), y.getVal()));
@@ -78,18 +119,25 @@ class Optimizer {
             Double g = castToFloat(exp.getExp2());
             if (g != null) {
                 switch (exp.getOp()) {
-                    case TOKEN_OP_ADD: return new FloatExp(exp.getLine(), f + g);
-                    case TOKEN_OP_SUB: return new FloatExp(exp.getLine(), f - g);
-                    case TOKEN_OP_MUL: return new FloatExp(exp.getLine(), f * g);
-                    case TOKEN_OP_POW: return new FloatExp(exp.getLine(), Math.pow(f, g));
+                    case TOKEN_OP_ADD:
+                        return new FloatExp(exp.getLine(), f + g);
+                    case TOKEN_OP_SUB:
+                        return new FloatExp(exp.getLine(), f - g);
+                    case TOKEN_OP_MUL:
+                        return new FloatExp(exp.getLine(), f * g);
+                    case TOKEN_OP_POW:
+                        return new FloatExp(exp.getLine(), Math.pow(f, g));
                     default:
                         break;
                 }
                 if (g != 0) {
                     switch (exp.getOp()) {
-                        case TOKEN_OP_DIV:  return new FloatExp(exp.getLine(), f / g);
-                        case TOKEN_OP_IDIV: return new FloatExp(exp.getLine(), LuaMath.floorDiv(f, g));
-                        case TOKEN_OP_MOD:  return new FloatExp(exp.getLine(), LuaMath.floorMod(f, g));
+                        case TOKEN_OP_DIV:
+                            return new FloatExp(exp.getLine(), f / g);
+                        case TOKEN_OP_IDIV:
+                            return new FloatExp(exp.getLine(), LuaMath.floorDiv(f, g));
+                        case TOKEN_OP_MOD:
+                            return new FloatExp(exp.getLine(), LuaMath.floorMod(f, g));
                         default:
                             break;
                     }
@@ -99,6 +147,12 @@ class Optimizer {
         return exp;
     }
 
+    /**
+     * 乘方
+     *
+     * @param exp
+     * @return
+     */
     static Exp optimizePow(Exp exp) {
         if (exp instanceof BinopExp) {
             BinopExp binopExp = (BinopExp) exp;
@@ -110,15 +164,30 @@ class Optimizer {
         return exp;
     }
 
+    /**
+     * 优化运算符表达式
+     *
+     * @param exp
+     * @return
+     */
     static Exp optimizeUnaryOp(UnopExp exp) {
         switch (exp.getOp()) {
-            case TOKEN_OP_UNM:  return optimizeUnm(exp);
-            case TOKEN_OP_NOT:  return optimizeNot(exp);
-            case TOKEN_OP_BNOT: return optimizeBnot(exp);
+            case TOKEN_OP_UNM:
+                return optimizeUnm(exp);
+            case TOKEN_OP_NOT:
+                return optimizeNot(exp);
+            case TOKEN_OP_BNOT:
+                return optimizeBnot(exp);
             default: return exp;
         }
     }
 
+    /**
+     * 优化数值运算
+     *
+     * @param exp
+     * @return
+     */
     private static Exp optimizeUnm(UnopExp exp) {
         if (exp.getExp() instanceof IntegerExp) {
             IntegerExp iExp = (IntegerExp) exp.getExp();
@@ -133,21 +202,27 @@ class Optimizer {
         return exp;
     }
 
+    /**
+     *
+     * @param exp
+     * @return
+     */
     private static Exp optimizeNot(UnopExp exp) {
         Exp subExp = exp.getExp();
-        if (subExp instanceof NilExp
-                || subExp instanceof FalseExp) {
+        if (subExp instanceof NilExp || subExp instanceof FalseExp) {
             return new TrueExp(exp.getLine());
         }
-        if (subExp instanceof TrueExp
-                || subExp instanceof IntegerExp
-                || subExp instanceof FloatExp
-                || subExp instanceof StringExp) {
+        if (subExp instanceof TrueExp || subExp instanceof IntegerExp || subExp instanceof FloatExp || subExp instanceof StringExp) {
             return new FalseExp(exp.getLine());
         }
         return exp;
     }
 
+    /**
+     *
+     * @param exp
+     * @return
+     */
     private static Exp optimizeBnot(UnopExp exp) {
         if (exp.getExp() instanceof IntegerExp) {
             IntegerExp iExp = (IntegerExp) exp.getExp();
@@ -164,23 +239,38 @@ class Optimizer {
         return exp;
     }
 
+    /**
+     *
+     * @param exp
+     * @return
+     */
     private static boolean isFalse(Exp exp) {
-        return exp instanceof FalseExp
-                || exp instanceof NilExp;
+        return exp instanceof FalseExp || exp instanceof NilExp;
     }
 
+    /**
+     *
+     * @param exp
+     * @return
+     */
     private static boolean isTrue(Exp exp) {
-        return exp instanceof TrueExp
-                || exp instanceof IntegerExp
-                || exp instanceof FloatExp
-                || exp instanceof StringExp;
+        return exp instanceof TrueExp || exp instanceof IntegerExp || exp instanceof FloatExp || exp instanceof StringExp;
     }
 
+    /**
+     *
+     * @param exp
+     * @return
+     */
     private static boolean isVarargOrFuncCall(Exp exp) {
-        return exp instanceof VarargExp
-                || exp instanceof FuncCallExp;
+        return exp instanceof VarargExp || exp instanceof FuncCallExp;
     }
 
+    /**
+     *
+     * @param exp
+     * @return
+     */
     private static Long castToInteger(Exp exp) {
         if (exp instanceof IntegerExp) {
             return ((IntegerExp) exp).getVal();
@@ -192,6 +282,11 @@ class Optimizer {
         return null;
     }
 
+    /**
+     *
+     * @param exp
+     * @return
+     */
     private static Double castToFloat(Exp exp) {
         if (exp instanceof IntegerExp) {
             return (double) ((IntegerExp) exp).getVal();

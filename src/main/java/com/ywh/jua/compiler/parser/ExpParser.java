@@ -17,47 +17,90 @@ import static com.ywh.jua.compiler.parser.BlockParser.parseBlock;
 import static com.ywh.jua.compiler.parser.Optimizer.*;
 import static com.ywh.jua.compiler.parser.PrefixExpParser.parsePrefixExp;
 
+/**
+ * 表达式解析器
+ *
+ * @author ywh
+ * @since 2020/8/25 11:26
+ */
 class ExpParser {
 
-    // explist ::= exp {‘,’ exp}
+    /**
+     * 解析表达式列表
+     *
+     * explist ::= exp {‘,’ exp}
+     *
+     * @param lexer
+     * @return
+     */
     static List<Exp> parseExpList(Lexer lexer) {
         List <Exp> exps = new ArrayList<>();
+        // 解析第一个表达式
         exps.add(parseExp(lexer));
+
+        // 循环逐个解析以逗号分隔的表达式列表。
         while (lexer.LookAhead() == TOKEN_SEP_COMMA) {
+            // 跳过逗号，添加解析后的表达式到返回列表。
             lexer.nextToken();
             exps.add(parseExp(lexer));
         }
         return exps;
     }
 
-    /*
-    exp ::=  nil | false | true | Numeral | LiteralString | ‘...’ | functiondef |
-         prefixexp | tableconstructor | exp binop exp | unop exp
-    */
-    /*
-    exp   ::= exp12
-    exp12 ::= exp11 {or exp11}
-    exp11 ::= exp10 {and exp10}
-    exp10 ::= exp9 {(‘<’ | ‘>’ | ‘<=’ | ‘>=’ | ‘~=’ | ‘==’) exp9}
-    exp9  ::= exp8 {‘|’ exp8}
-    exp8  ::= exp7 {‘~’ exp7}
-    exp7  ::= exp6 {‘&’ exp6}
-    exp6  ::= exp5 {(‘<<’ | ‘>>’) exp5}
-    exp5  ::= exp4 {‘..’ exp4}
-    exp4  ::= exp3 {(‘+’ | ‘-’ | ‘*’ | ‘/’ | ‘//’ | ‘%’) exp3}
-    exp2  ::= {(‘not’ | ‘#’ | ‘-’ | ‘~’)} exp1
-    exp1  ::= exp0 {‘^’ exp2}
-    exp0  ::= nil | false | true | Numeral | LiteralString
-            | ‘...’ | functiondef | prefixexp | tableconstructor
-    */
+
+    /**
+     * 解析表达式
+     * 由于表达式存在优先级，语法上有歧义，因此不能用前瞻的方法解析；
+     * 根据优先级划分为 12 个函数，从低到高：parseExp12 ~ parseExp1，parseExp0（运算符之外的其他表达式）。
+     * 在二元运算符中，除了拼接和乘方具有右结合性，其他都具有左结合性。
+     *
+     * exp   ::=  nil | false | true | Numeral | LiteralString | ‘...’ | functiondef |
+     *              prefixexp | tableconstructor | exp binop exp | unop exp
+     * exp   ::= exp12
+     * exp12 ::= exp11 {or exp11}
+     * exp11 ::= exp10 {and exp10}
+     * exp10 ::= exp9 {(‘<’ | ‘>’ | ‘<=’ | ‘>=’ | ‘~=’ | ‘==’) exp9}
+     * exp9  ::= exp8 {‘|’ exp8}
+     * exp8  ::= exp7 {‘~’ exp7}
+     * exp7  ::= exp6 {‘&’ exp6}
+     * exp6  ::= exp5 {(‘<<’ | ‘>>’) exp5}
+     * exp5  ::= exp4 {‘..’ exp4}
+     * exp4  ::= exp3 {(‘+’ | ‘-’ | ‘*’ | ‘/’ | ‘//’ | ‘%’) exp3}
+     * exp2  ::= {(‘not’ | ‘#’ | ‘-’ | ‘~’)} exp1
+     * exp1  ::= exp0 {‘^’ exp2}
+     * exp0  ::= nil | false | true | Numeral | LiteralString
+     *         | ‘...’ | functiondef | prefixexp | tableconstructor
+     *
+     *
+     * @param lexer
+     * @return
+     */
     static Exp parseExp(Lexer lexer) {
         return parseExp12(lexer);
     }
 
 
-    // x or y
+    /**
+     * 解析优先级 12 表达式
+     *
+     * x or y
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp12(Lexer lexer) {
         Exp exp = parseExp11(lexer);
+
+        // or
+        // 逻辑或具有左结合性，在循环中调用 parseExp11 解析更高优先级的运算符表达式。
+
+        // a or b or c 的表达式 AST
+        //      or
+        //     /  \
+        //    or   \
+        //   / \    \
+        // a    b    c
+
         while (lexer.LookAhead() == TOKEN_OP_OR) {
             Token op = lexer.nextToken();
             BinopExp lor = new BinopExp(op, exp, parseExp11(lexer));
@@ -66,7 +109,16 @@ class ExpParser {
         return exp;
     }
 
-    // x and y
+
+    /**
+     * 解析优先级 11 表达式
+     *
+     * x and y
+     *
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp11(Lexer lexer) {
         Exp exp = parseExp10(lexer);
         while (lexer.LookAhead() == TOKEN_OP_AND) {
@@ -77,7 +129,14 @@ class ExpParser {
         return exp;
     }
 
-    // compare
+    /**
+     * 解析优先级 10 表达式
+     *
+     * compare
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp10(Lexer lexer) {
         Exp exp = parseExp9(lexer);
         while (true) {
@@ -97,7 +156,14 @@ class ExpParser {
         }
     }
 
-    // x | y
+    /**
+     * 解析优先级 9 表达式
+     *
+     * x | y
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp9(Lexer lexer) {
         Exp exp = parseExp8(lexer);
         while (lexer.LookAhead() == TOKEN_OP_BOR) {
@@ -108,7 +174,14 @@ class ExpParser {
         return exp;
     }
 
-    // x ~ y
+    /**
+     * 解析优先级 8 表达式
+     *
+     * x ~ y
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp8(Lexer lexer) {
         Exp exp = parseExp7(lexer);
         while (lexer.LookAhead() == TOKEN_OP_WAVE) {
@@ -119,7 +192,14 @@ class ExpParser {
         return exp;
     }
 
-    // x & y
+    /**
+     * 解析优先级 7 表达式
+     *
+     * x & y
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp7(Lexer lexer) {
         Exp exp = parseExp6(lexer);
         while (lexer.LookAhead() == TOKEN_OP_BAND) {
@@ -130,7 +210,14 @@ class ExpParser {
         return exp;
     }
 
-    // shift
+    /**
+     * 解析优先级 6 表达式
+     *
+     * shift
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp6(Lexer lexer) {
         Exp exp = parseExp5(lexer);
         while (true) {
@@ -147,8 +234,23 @@ class ExpParser {
         }
     }
 
-    // a .. b
+    /**
+     * 解析优先级 5 表达式
+     *
+     * a .. b
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp5(Lexer lexer) {
+        // 虽然拼接运算符也具有右结合性，但是由于其对应的 Lua 虚拟机指令 CONCAT 比较特别；
+        // 所以需要做特殊处理：生成多叉树。
+
+        // a .. b .. c 的表达式 AST
+        //      ..
+        //    /  |  \
+        //   a   b   c
+
         Exp exp = parseExp4(lexer);
         if (lexer.LookAhead() != TOKEN_OP_CONCAT) {
             return exp;
@@ -164,7 +266,14 @@ class ExpParser {
         return new ConcatExp(line, exps);
     }
 
-    // x +/- y
+    /**
+     * 解析优先级 4 表达式
+     *
+     * x +/- y
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp4(Lexer lexer) {
         Exp exp = parseExp3(lexer);
         while (true) {
@@ -181,7 +290,14 @@ class ExpParser {
         }
     }
 
-    // *, %, /, //
+    /**
+     * 解析优先级 3 表达式
+     *
+     * *, %, /, //
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp3(Lexer lexer) {
         Exp exp = parseExp2(lexer);
         while (true) {
@@ -200,7 +316,15 @@ class ExpParser {
         }
     }
 
-    // unary
+    /**
+     * 解析优先级 2 表达式
+     * 一元运算符：- ~ # not 也可以认为具有右结合性，因此需要调用自己解析后面的一元运算符表达式
+     *
+     * unary
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp2(Lexer lexer) {
         switch (lexer.LookAhead()) {
             case TOKEN_OP_MINUS:
@@ -209,14 +333,31 @@ class ExpParser {
             case TOKEN_OP_NOT:
                 Token op = lexer.nextToken();
                 UnopExp exp = new UnopExp(op, parseExp2(lexer));
-            return optimizeUnaryOp(exp);
+                return optimizeUnaryOp(exp);
+            default:
+                break;
         }
         return parseExp1(lexer);
     }
 
-    // x ^ y
-    private static Exp parseExp1(Lexer lexer) { // pow is right associative
+    /**
+     * 解析优先级 1 表达式
+     *
+     * x ^ y
+     *
+     * @param lexer
+     * @return
+     */
+    private static Exp parseExp1(Lexer lexer) {
         Exp exp = parseExp0(lexer);
+
+        // 乘方具有右结合性，因此递归调用自己解析后面的乘方运算符表达式。
+        // a ^ b ^ c 的表达式 AST
+        //      ^
+        //     / \
+        //    /   ^
+        //   /   /  \
+        //  a   b    c
         if (lexer.LookAhead() == TOKEN_OP_POW) {
             Token op = lexer.nextToken();
             exp = new BinopExp(op, exp, parseExp2(lexer));
@@ -224,30 +365,46 @@ class ExpParser {
         return optimizePow(exp);
     }
 
+    /**
+     * 解析优先级 0 表达式（运算符之外的其他表达式）
+     * ... nil true false literalString { function
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseExp0(Lexer lexer) {
+
+        // 前瞻一个 token 决定具体要解析哪种表达式。
+        // 其中 vararg 和非数字字面量表达式比较简单，直接写在 case 语句里
         switch (lexer.LookAhead()) {
-            case TOKEN_VARARG: // ...
+            case TOKEN_VARARG:
                 return new VarargExp(lexer.nextToken().getLine());
-            case TOKEN_KW_NIL: // nil
+            case TOKEN_KW_NIL:
                 return new NilExp(lexer.nextToken().getLine());
-            case TOKEN_KW_TRUE: // true
+            case TOKEN_KW_TRUE:
                 return new TrueExp(lexer.nextToken().getLine());
-            case TOKEN_KW_FALSE: // false
+            case TOKEN_KW_FALSE:
                 return new FalseExp(lexer.nextToken().getLine());
-            case TOKEN_STRING: // LiteralString
+            case TOKEN_STRING:
                 return new StringExp(lexer.nextToken());
-            case TOKEN_NUMBER: // Numeral
+            case TOKEN_NUMBER:
                 return parseNumberExp(lexer);
-            case TOKEN_SEP_LCURLY: // tableconstructor
+            case TOKEN_SEP_LCURLY:
                 return parseTableConstructorExp(lexer);
-            case TOKEN_KW_FUNCTION: // functiondef
+            case TOKEN_KW_FUNCTION:
                 lexer.nextToken();
                 return parseFuncDefExp(lexer);
-            default: // prefixexp
+            default:
                 return parsePrefixExp(lexer);
         }
     }
 
+    /**
+     * 解析数字字面量表达式
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseNumberExp(Lexer lexer) {
         Token token = lexer.nextToken();
         Long i = LuaNumber.parseInteger(token.getValue());
@@ -261,15 +418,77 @@ class ExpParser {
         throw new RuntimeException("not a number: " + token);
     }
 
-    // functiondef ::= function funcbody
-    // funcbody ::= ‘(’ [parlist] ‘)’ block end
+
+
+
+    /**
+     * 解析函数参数列表
+     *
+     * [parlist]
+     * parlist ::= namelist [‘,’ ‘...’] | ‘...’
+     *
+     * @param lexer
+     * @return
+     */
+    private static List<String> parseParList(Lexer lexer) {
+        List<String> names = new ArrayList<>();
+
+        // 无参（)）或变长参数（...）
+        switch (lexer.LookAhead()) {
+            case TOKEN_SEP_RPAREN:
+                return names;
+            case TOKEN_VARARG:
+                lexer.nextToken();
+                names.add("...");
+                return names;
+            default:
+                break;
+        }
+
+        // 第一个参数
+        names.add(lexer.nextIdentifier().getValue());
+
+        // ,
+        while (lexer.LookAhead() == TOKEN_SEP_COMMA) {
+            lexer.nextToken();
+            // 参数标识符
+            if (lexer.LookAhead() == TOKEN_IDENTIFIER) {
+                names.add(lexer.nextIdentifier().getValue());
+            }
+            // 变长参数
+            else {
+                lexer.nextTokenOfKind(TOKEN_VARARG);
+                names.add("...");
+                break;
+            }
+        }
+
+        return names;
+    }
+
+    /**
+     * 解析函数定义表达式
+     *
+     * functiondef ::= function funcbody
+     * funcbody ::= ‘(’ [parlist] ‘)’ block end
+     *
+     * @param lexer
+     * @return
+     */
     static FuncDefExp parseFuncDefExp(Lexer lexer) {
-        int line = lexer.line();                    // function
-        lexer.nextTokenOfKind(TOKEN_SEP_LPAREN);    // (
-        List<String> parList = parseParList(lexer); // [parlist]
-        lexer.nextTokenOfKind(TOKEN_SEP_RPAREN);    // )
-        Block block = parseBlock(lexer);            // block
-        lexer.nextTokenOfKind(TOKEN_KW_END);        // end
+
+        // function
+        int line = lexer.line();
+        // (
+        lexer.nextTokenOfKind(TOKEN_SEP_LPAREN);
+        // [parlist]
+        List<String> parList = parseParList(lexer);
+        // )
+        lexer.nextTokenOfKind(TOKEN_SEP_RPAREN);
+        // block
+        Block block = parseBlock(lexer);
+        // end
+        lexer.nextTokenOfKind(TOKEN_KW_END);
         int lastLine = lexer.line();
 
         FuncDefExp fdExp = new FuncDefExp();
@@ -281,54 +500,47 @@ class ExpParser {
         return fdExp;
     }
 
-    // [parlist]
-    // parlist ::= namelist [‘,’ ‘...’] | ‘...’
-    private static List<String> parseParList(Lexer lexer) {
-        List<String> names = new ArrayList<>();
-
-        switch (lexer.LookAhead()) {
-            case TOKEN_SEP_RPAREN:
-                return names;
-            case TOKEN_VARARG:
-                lexer.nextToken();
-                names.add("...");
-                return names;
-        }
-
-        names.add(lexer.nextIdentifier().getValue());
-        while (lexer.LookAhead() == TOKEN_SEP_COMMA) {
-            lexer.nextToken();
-            if (lexer.LookAhead() == TOKEN_IDENTIFIER) {
-                names.add(lexer.nextIdentifier().getValue());
-            } else {
-                lexer.nextTokenOfKind(TOKEN_VARARG);
-                names.add("...");
-                break;
-            }
-        }
-
-        return names;
-    }
-
-    // tableconstructor ::= ‘{’ [fieldlist] ‘}’
+    /**
+     * 解析表构造表达式
+     *
+     * tableconstructor ::= ‘{’ [fieldlist] ‘}’
+     *
+     * @param lexer
+     * @return
+     */
     static TableConstructorExp parseTableConstructorExp(Lexer lexer) {
         TableConstructorExp tcExp = new TableConstructorExp();
         tcExp.setLine(lexer.line());
-        lexer.nextTokenOfKind(TOKEN_SEP_LCURLY); // {
-        parseFieldList(lexer, tcExp);            // [fieldlist]
-        lexer.nextTokenOfKind(TOKEN_SEP_RCURLY); // }
+        // {
+        lexer.nextTokenOfKind(TOKEN_SEP_LCURLY);
+        // [fieldlist]
+        parseFieldList(lexer, tcExp);
+        // }
+        lexer.nextTokenOfKind(TOKEN_SEP_RCURLY);
         tcExp.setLastLine(lexer.line());
         return tcExp;
     }
 
-    // fieldlist ::= field {fieldsep field} [fieldsep]
+    /**
+     * 解析可选字段列表
+     *
+     * fieldlist ::= field {fieldsep field} [fieldsep]
+     *
+     * @param lexer
+     * @param tcExp
+     */
     private static void parseFieldList(Lexer lexer, TableConstructorExp tcExp) {
         if (lexer.LookAhead() != TOKEN_SEP_RCURLY) {
+            // field
             parseField(lexer, tcExp);
 
             while (isFieldSep(lexer.LookAhead())) {
+
+                // fieldsep
                 lexer.nextToken();
                 if (lexer.LookAhead() != TOKEN_SEP_RCURLY) {
+
+                    // field
                     parseField(lexer, tcExp);
                 } else {
                     break;
@@ -337,19 +549,36 @@ class ExpParser {
         }
     }
 
-    // fieldsep ::= ‘,’ | ‘;’
+    /**
+     * 处理字段分隔符（逗号或分号）
+     *
+     * fieldsep ::= ‘,’ | ‘;’
+     *
+     * @param kind
+     * @return
+     */
     private static boolean isFieldSep(TokenKind kind) {
         return kind == TOKEN_SEP_COMMA || kind == TOKEN_SEP_SEMI;
     }
 
-    // field ::= ‘[’ exp ‘]’ ‘=’ exp | Name ‘=’ exp | exp
+    /**
+     * field ::= ‘[’ exp ‘]’ ‘=’ exp | Name ‘=’ exp | exp
+     *
+     * @param lexer
+     * @param tcExp
+     */
     private static void parseField(Lexer lexer, TableConstructorExp tcExp) {
         if (lexer.LookAhead() == TOKEN_SEP_LBRACK) {
-            lexer.nextToken();                       // [
-            tcExp.addKey(parseExp(lexer));           // exp
-            lexer.nextTokenOfKind(TOKEN_SEP_RBRACK); // ]
-            lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);  // =
-            tcExp.addVal(parseExp(lexer));           // exp
+            // [
+            lexer.nextToken();
+            // exp
+            tcExp.addKey(parseExp(lexer));
+            // ]
+            lexer.nextTokenOfKind(TOKEN_SEP_RBRACK);
+            // =
+            lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);
+            // exp
+            tcExp.addVal(parseExp(lexer));
             return;
         }
 

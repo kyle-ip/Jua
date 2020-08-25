@@ -24,7 +24,7 @@ public class IfStat extends Stat {
     private List<Exp> exps;
 
     /**
-     * 与表达式列表对应的语句块列表
+     * 与表达式列表对应的块列表
      */
     private List<Block> blocks;
 

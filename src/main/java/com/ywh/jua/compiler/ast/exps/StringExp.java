@@ -4,6 +4,7 @@ import com.ywh.jua.compiler.ast.Exp;
 import com.ywh.jua.compiler.lexer.Token;
 
 /**
+ * 字符串表达式
  *
  * @author ywh
  * @since 2020/8/25 11:26

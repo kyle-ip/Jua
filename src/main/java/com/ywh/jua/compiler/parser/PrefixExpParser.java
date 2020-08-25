@@ -11,36 +11,55 @@ import java.util.List;
 import static com.ywh.jua.compiler.lexer.TokenKind.*;
 import static com.ywh.jua.compiler.parser.ExpParser.*;
 
-
+/**
+ * 前缀表达式解析器
+ *
+ * @author ywh
+ * @since 2020/8/25 11:26
+ */
 class PrefixExpParser {
 
-    /*
-    prefixexp ::= Name
-        | ‘(’ exp ‘)’
-        | prefixexp ‘[’ exp ‘]’
-        | prefixexp ‘.’ Name
-        | prefixexp [‘:’ Name] args
-    */
+    /**
+     * 解析前缀表达式
+     * 只能以标识符或左圆括号开始
+     *
+     * prefixexp ::= Name
+     *     | ‘(’ exp ‘)’
+     *     | prefixexp ‘[’ exp ‘]’
+     *     | prefixexp ‘.’ Name
+     *     | prefixexp [‘:’ Name] args
+     *
+     * @param lexer
+     * @return
+     */
     static Exp parsePrefixExp(Lexer lexer) {
         Exp exp;
+        // 先前瞻一个 token，根据情况解析出标识符或圆括号表达式。
         if (lexer.LookAhead() == TOKEN_IDENTIFIER) {
             Token id = lexer.nextIdentifier(); // Name
             exp = new NameExp(id.getLine(), id.getValue());
         } else { // ‘(’ exp ‘)’
             exp = parseParensExp(lexer);
         }
+        // 完成后续解析。
         return finishPrefixExp(lexer, exp);
     }
 
+    /**
+     * 解析圆括号表达式
+     *
+     * @param lexer
+     * @return
+     */
     private static Exp parseParensExp(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_SEP_LPAREN); // (
-        Exp exp = parseExp(lexer);               // exp
-        lexer.nextTokenOfKind(TOKEN_SEP_RPAREN); // )
+        // (
+        lexer.nextTokenOfKind(TOKEN_SEP_LPAREN);
+        // exp
+        Exp exp = parseExp(lexer);
+        // )
+        lexer.nextTokenOfKind(TOKEN_SEP_RPAREN);
 
-        if (exp instanceof VarargExp
-                || exp instanceof FuncCallExp
-                || exp instanceof NameExp
-                || exp instanceof TableAccessExp) {
+        if (exp instanceof VarargExp || exp instanceof FuncCallExp || exp instanceof NameExp || exp instanceof TableAccessExp) {
             return new ParensExp(exp);
         }
 
@@ -48,27 +67,41 @@ class PrefixExpParser {
         return exp;
     }
 
+    /**
+     *
+     * @param lexer
+     * @param exp
+     * @return
+     */
     private static Exp finishPrefixExp(Lexer lexer, Exp exp) {
         while (true) {
             switch (lexer.LookAhead()) {
                 case TOKEN_SEP_LBRACK: { // prefixexp ‘[’ exp ‘]’
-                    lexer.nextToken();                       // ‘[’
-                    Exp keyExp = parseExp(lexer);            // exp
-                    lexer.nextTokenOfKind(TOKEN_SEP_RBRACK); // ‘]’
+                    // ‘[’
+                    lexer.nextToken();
+                    // exp
+                    Exp keyExp = parseExp(lexer);
+                    // ‘]’
+                    lexer.nextTokenOfKind(TOKEN_SEP_RBRACK);
                     exp = new TableAccessExp(lexer.line(), exp, keyExp);
                     break;
                 }
-                case TOKEN_SEP_DOT: { // prefixexp ‘.’ Name
-                    lexer.nextToken();                   // ‘.’
-                    Token name = lexer.nextIdentifier(); // Name
+                // prefixexp ‘.’ Name
+                case TOKEN_SEP_DOT: {
+                    // ‘.’
+                    lexer.nextToken();
+                    // Name
+                    Token name = lexer.nextIdentifier();
                     Exp keyExp = new StringExp(name);
                     exp = new TableAccessExp(name.getLine(), exp, keyExp);
                     break;
                 }
-                case TOKEN_SEP_COLON: // prefixexp ‘:’ Name args
+                // prefixexp ‘:’ Name args
+                case TOKEN_SEP_COLON:
                 case TOKEN_SEP_LPAREN:
                 case TOKEN_SEP_LCURLY:
-                case TOKEN_STRING: // prefixexp args
+                // prefixexp args
+                case TOKEN_STRING:
                     exp = finishFuncCallExp(lexer, exp);
                     break;
                 default:
@@ -77,7 +110,15 @@ class PrefixExpParser {
         }
     }
 
-    // functioncall ::=  prefixexp args | prefixexp ‘:’ Name args
+    /**
+     * 解析函数调用表达式
+     *
+     * functioncall ::=  prefixexp args | prefixexp ‘:’ Name args
+     *
+     * @param lexer
+     * @param prefixExp
+     * @return
+     */
     private static FuncCallExp finishFuncCallExp(Lexer lexer, Exp prefixExp) {
         FuncCallExp fcExp = new FuncCallExp();
         fcExp.setPrefixExp(prefixExp);
@@ -88,6 +129,12 @@ class PrefixExpParser {
         return fcExp;
     }
 
+    /**
+     * 解析名称表达式
+     *
+     * @param lexer
+     * @return
+     */
     private static StringExp parseNameExp(Lexer lexer) {
         if (lexer.LookAhead() == TOKEN_SEP_COLON) {
             lexer.nextToken();
@@ -97,20 +144,31 @@ class PrefixExpParser {
         return null;
     }
 
-    // args ::=  ‘(’ [explist] ‘)’ | tableconstructor | LiteralString
+    /**
+     * 解析函数参数
+     *
+     * args ::=  ‘(’ [explist] ‘)’ | tableconstructor | LiteralString
+     *
+     * @param lexer
+     * @return
+     */
     private static List<Exp> parseArgs(Lexer lexer) {
         switch (lexer.LookAhead()) {
-            case TOKEN_SEP_LPAREN: // ‘(’ [explist] ‘)’
-                lexer.nextToken(); // TOKEN_SEP_LPAREN
+            // ‘(’ [explist] ‘)’
+            case TOKEN_SEP_LPAREN:
+                // TOKEN_SEP_LPAREN
+                lexer.nextToken();
                 List<Exp> args = null;
                 if (lexer.LookAhead() != TOKEN_SEP_RPAREN) {
                     args = parseExpList(lexer);
                 }
                 lexer.nextTokenOfKind(TOKEN_SEP_RPAREN);
                 return args;
-            case TOKEN_SEP_LCURLY: // ‘{’ [fieldlist] ‘}’
+            // ‘{’ [fieldlist] ‘}’
+            case TOKEN_SEP_LCURLY:
                 return Collections.singletonList(parseTableConstructorExp(lexer));
-            default: // LiteralString
+            // LiteralString
+            default:
                 Token str = lexer.nextTokenOfKind(TOKEN_STRING);
                 return Collections.singletonList(new StringExp(str));
         }

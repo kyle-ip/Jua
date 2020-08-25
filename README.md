@@ -3,16 +3,16 @@
 [![Java](https://img.shields.io/badge/language-Java-green.svg)]()
 [![lua](https://img.shields.io/badge/language-lua-blue.svg)]()
 
-A simple Lua written in Java.
+A simplified Lua written in Java.
 
 ## Introduction
 
-Jua is a toy Lua (5.3) implementation written in Java. 
+Jua is a simplified Lua (5.3) implementation written in Java. 
 
 The purpose of building this project is to learn:
 
 - Data Structure
-- The Principles of Register-based Virtual Machine
+- Register-based Virtual Machine & Instruction Set Design
 - Compilers
 - Lua grammar & Standard Library
 

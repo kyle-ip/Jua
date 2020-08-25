@@ -62,7 +62,7 @@ public class Instructions {
     /* ========== 加载指令（load）========== */
 
     /**
-     * LOCDNIL 指令（iABC 模式）
+     * LOADNIL 指令（iABC 模式）
      * 给连续 n 个寄存器放置 nil 值。
      *
      * R(A), R(A+1), ..., R(A+B) := nil

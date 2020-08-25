@@ -165,6 +165,13 @@ public class BinaryChunk {
         return new String(a);
     }
 
+    /**
+     * 从 buf 中取 n 个字节。
+     *
+     * @param buf
+     * @param n
+     * @return
+     */
     private static byte[] getBytes(ByteBuffer buf, int n) {
         byte[] a = new byte[n];
         buf.get(a);
