@@ -65,6 +65,24 @@ public class BinaryChunk {
     private static final double LUAC_NUM = 370.5;
 
     /**
+     * 判断是否二进制块
+     *
+     * @param data
+     * @return
+     */
+    public static boolean isBinaryChunk(byte[] data) {
+        if (data == null || data.length < 4) {
+            return false;
+        }
+        for (int i = 0; i < 4; i++) {
+            if (data[i] != LUA_SIGNATURE[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * 解析二进制 chunk 为函数原型。
      *
      * @param data

@@ -20,12 +20,24 @@ public class LocVar {
         return varName;
     }
 
+    public void setVarName(String varName) {
+        this.varName = varName;
+    }
+
     public int getStartPC() {
         return startPC;
     }
 
+    public void setStartPC(int startPC) {
+        this.startPC = startPC;
+    }
+
     public int getEndPC() {
         return endPC;
+    }
+
+    public void setEndPC(int endPC) {
+        this.endPC = endPC;
     }
 
     void read(ByteBuffer buf) {

@@ -24,8 +24,16 @@ public class Upvalue {
         return instack;
     }
 
+    public void setInstack(byte instack) {
+        this.instack = instack;
+    }
+
     public byte getIdx() {
         return idx;
+    }
+
+    public void setIdx(byte idx) {
+        this.idx = idx;
     }
 
     void read(ByteBuffer buf) {

@@ -18,6 +18,11 @@ import static com.ywh.jua.api.ArithOp.LUA_OPUNM;
 import static com.ywh.jua.api.LuaType.*;
 import static com.ywh.jua.api.ThreadStatus.LUA_ERRRUN;
 import static com.ywh.jua.api.ThreadStatus.LUA_OK;
+import static com.ywh.jua.chunk.BinaryChunk.isBinaryChunk;
+import static com.ywh.jua.chunk.BinaryChunk.undump;
+import static com.ywh.jua.compiler.Compiler.compile;
+
+import com.ywh.jua.compiler.Compiler;
 
 /**
  * Lua State 实现
@@ -31,14 +36,12 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * Lua 注册表（实现全局变量等）
      * 注册表是全局状态，每个 Lua 解释器实例都有自己的注册表。
      * Lua API 没有提供专门的方法操作注册表，通过伪索引访问。
-     *
      */
     LuaTable registry = new LuaTable(0, 0);
 
     /**
      * 使用单向链表实现函数调用栈，头部是栈顶，尾部是栈底。
      * 入栈即在链表头部插入一个节点，让这个节点成为新的头部。
-     *
      */
     private LuaStack stack = new LuaStack(LUA_MINSTACK);
 
@@ -531,7 +534,8 @@ public class LuaStateImpl implements LuaState, LuaVM {
                 }
             }
         }
-        throw new RuntimeException("not a table!"); // todo
+        // TODO
+        throw new RuntimeException("not a table!");
     }
 
     /* set functions (stack -> Lua) */
@@ -576,7 +580,6 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     *
      * @param t
      * @param k
      * @param v
@@ -614,12 +617,12 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
     /**
      * 加载二进制 chunk 或 Lua 脚本，把主函数原型实例化为闭包并推入栈顶。
-     * 
+     * <p>
      * 通过参数 mode（可选 “b”、“t”、“bt”）选定加载模式：
      * b：如果加载二进制 chunk，则只需读文件、解析函数原型、实例化为闭包、推入栈顶；
      * t：如果加载文本 Lua 脚本，则先进行编译。
      * bt：都可以，根据实际情况处理。
-     * 
+     * <p>
      * 如果 load 方法无法加载 chunk，则要在栈顶留下一条错误消息。
      * 返回一个状态码，0 表示成功，其他表示失败。
      *
@@ -633,7 +636,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
         // TODO
         // 解析字节数组为函数原型，把实例化为闭包的函数原型推入栈顶。
-        Prototype proto = BinaryChunk.undump(chunk);
+        Prototype proto = isBinaryChunk(chunk) ? undump(chunk) : compile(new String(chunk), chunkName);
         Closure closure = new Closure(proto);
         stack.push(closure);
 
@@ -651,7 +654,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * 调用 Lua 函数
      * 在执行之前，必须先把被调用函数入栈，然后把参数值依次入栈；
      * call 方法调用结束后，参数值和函数会被弹出，取而代之的是指定数量的返回值。
-     * 
+     * <p>
      * 接收两个参数，其一是准备传递给被调用函数的参数数量（同时隐含给出被调用函数在栈中的位置）；
      * 其二是需要的返回值数量（多退少补），-1 表示返回值全部留在栈顶。
      *
@@ -770,7 +773,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * 逐条执行被调用函数的指令，直到遇到 RETURN 指令。
      */
     private void runLuaClosure() {
-        for (;;) {
+        for (; ; ) {
             int i = fetch();
             OpCode opCode = Instruction.getOpCode(i);
             opCode.getAction().execute(i, this);
@@ -1030,7 +1033,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         // 从栈顶弹出 n 个 Lua 值，成为 Java 闭包的 Upvlue。
         for (int i = n; i > 0; i--) {
             Object val = stack.pop();
-            closure.upvals[i-1] = new UpvalueHolder(val); // TODO
+            closure.upvals[i - 1] = new UpvalueHolder(val); // TODO
         }
 
         // 把 Java 闭包推入栈顶。
@@ -1120,7 +1123,6 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     *
      * @param val
      * @return
      */
@@ -1135,7 +1137,6 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /**
-     *
      * @param val
      * @param mt
      */

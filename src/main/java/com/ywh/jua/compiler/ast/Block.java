@@ -19,8 +19,14 @@ import java.util.List;
  */
 public class Block extends Node {
 
+    /**
+     * 语句
+     */
     private List<Stat> stats;
 
+    /**
+     * 返回语句
+     */
     private List<Exp> retExps;
 
     public List<Stat> getStats() {

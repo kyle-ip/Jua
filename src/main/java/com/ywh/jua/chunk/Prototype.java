@@ -190,6 +190,58 @@ public class Prototype {
         readUpvalueNames(buf);
     }
 
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public void setLineDefined(int lineDefined) {
+        this.lineDefined = lineDefined;
+    }
+
+    public void setLastLineDefined(int lastLineDefined) {
+        this.lastLineDefined = lastLineDefined;
+    }
+
+    public void setNumParams(byte numParams) {
+        this.numParams = numParams;
+    }
+
+    public void setIsVararg(byte isVararg) {
+        this.isVararg = isVararg;
+    }
+
+    public void setMaxStackSize(byte maxStackSize) {
+        this.maxStackSize = maxStackSize;
+    }
+
+    public void setCode(int[] code) {
+        this.code = code;
+    }
+
+    public void setConstants(Object[] constants) {
+        this.constants = constants;
+    }
+
+    public void setUpvalues(Upvalue[] upvalues) {
+        this.upvalues = upvalues;
+    }
+
+    public void setProtos(Prototype[] protos) {
+        this.protos = protos;
+    }
+
+    public void setLineInfo(int[] lineInfo) {
+        this.lineInfo = lineInfo;
+    }
+
+    public void setLocVars(LocVar[] locVars) {
+        this.locVars = locVars;
+    }
+
+    public void setUpvalueNames(String[] upvalueNames) {
+        this.upvalueNames = upvalueNames;
+    }
+
     /**
      * 读取指令表
      *
