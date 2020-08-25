@@ -2,7 +2,7 @@ package com.ywh.jua.vm;
 
 /**
  * 浮点字节编码
- * 如果某个字节二进制携程 eeeeexxx，则当 eeeee == 0 时该字节表示整数 xxx，否则就是 (1xxx) * 2 ^ (eeeee - 1)
+ * 如果某个字节二进制写成 eeeeexxx，则当 eeeee == 0 时该字节表示整数 xxx，否则就是 (1xxx) * 2 ^ (eeeee - 1)
  *
  * @author ywh
  * @since 2020/8/20 11:26
