@@ -29,30 +29,31 @@ public class BasicLib {
      * 基础库函数
      */
     private static final Map<String, JavaFunction> BASE_FUNCS = new HashMap<>();
+
     static {
-        BASE_FUNCS.put("print",        BasicLib::basePrint);
-        BASE_FUNCS.put("assert",       BasicLib::baseAssert);
-        BASE_FUNCS.put("error",        BasicLib::baseError);
-        BASE_FUNCS.put("select",       BasicLib::baseSelect);
-        BASE_FUNCS.put("ipairs",       BasicLib::baseIpairs);
-        BASE_FUNCS.put("pairs",        BasicLib::basePairs);
-        BASE_FUNCS.put("next",         BasicLib::baseNext);
-        BASE_FUNCS.put("load",         BasicLib::baseLoad);
-        BASE_FUNCS.put("loadfile",     BasicLib::baseLoadFile);
-        BASE_FUNCS.put("dofile",       BasicLib::baseDoFile);
-        BASE_FUNCS.put("pcall",        BasicLib::basePcall);
-        BASE_FUNCS.put("xpcall",       BasicLib::baseXpcall);
+        BASE_FUNCS.put("print", BasicLib::basePrint);
+        BASE_FUNCS.put("assert", BasicLib::baseAssert);
+        BASE_FUNCS.put("error", BasicLib::baseError);
+        BASE_FUNCS.put("select", BasicLib::baseSelect);
+        BASE_FUNCS.put("ipairs", BasicLib::baseIpairs);
+        BASE_FUNCS.put("pairs", BasicLib::basePairs);
+        BASE_FUNCS.put("next", BasicLib::baseNext);
+        BASE_FUNCS.put("load", BasicLib::baseLoad);
+        BASE_FUNCS.put("loadfile", BasicLib::baseLoadFile);
+        BASE_FUNCS.put("dofile", BasicLib::baseDoFile);
+        BASE_FUNCS.put("pcall", BasicLib::basePcall);
+        BASE_FUNCS.put("xpcall", BasicLib::baseXpcall);
         BASE_FUNCS.put("getmetatable", BasicLib::baseGetMetatable);
         BASE_FUNCS.put("setmetatable", BasicLib::baseSetMetatable);
-        BASE_FUNCS.put("rawequal",     BasicLib::baseRawEqual);
-        BASE_FUNCS.put("rawlen",       BasicLib::baseRawLen);
-        BASE_FUNCS.put("rawget",       BasicLib::baseRawGet);
-        BASE_FUNCS.put("rawset",       BasicLib::baseRawSet);
-        BASE_FUNCS.put("type",         BasicLib::baseType);
-        BASE_FUNCS.put("tostring",     BasicLib::baseToString);
-        BASE_FUNCS.put("tonumber",     BasicLib::baseToNumber);
+        BASE_FUNCS.put("rawequal", BasicLib::baseRawEqual);
+        BASE_FUNCS.put("rawlen", BasicLib::baseRawLen);
+        BASE_FUNCS.put("rawget", BasicLib::baseRawGet);
+        BASE_FUNCS.put("rawset", BasicLib::baseRawSet);
+        BASE_FUNCS.put("type", BasicLib::baseType);
+        BASE_FUNCS.put("tostring", BasicLib::baseToString);
+        BASE_FUNCS.put("tonumber", BasicLib::baseToNumber);
         /* placeholders */
-        BASE_FUNCS.put("_G",       null);
+        BASE_FUNCS.put("_G", null);
         BASE_FUNCS.put("_VERSION", null);
     }
 
@@ -162,15 +163,16 @@ public class BasicLib {
 
     /**
      * 接收一个固定参数 index 和人一个可选参数，如果 index 是数字，该函数返回从 index 开始的所有可选参数。
-     *
+     * <p>
      * select (index, ···)
      * http://www.lua.org/manual/5.3/manual.html#pdf-select
      * lua-5.3.4/src/lbaselib.c#luaB_select()
-     *
+     * <p>
      * select(1, "a", "b", "c")     =>  a b c
      * select(2, "a", "b", "c")     =>  b c
      * select("#", "a", "b", "c")   =>  3
      * select(-1, "a", "b", "c")    =>  c
+     *
      * @param ls
      * @return
      */
@@ -212,7 +214,6 @@ public class BasicLib {
     }
 
     /**
-     *
      * @param ls
      * @return
      */
@@ -333,7 +334,7 @@ public class BasicLib {
         String fname = ls.optString(1, "");
         String mode = ls.optString(1, "bt");
         /* 'env' index or 0 if no 'env' */
-        int env = !ls.isNone(3)? 3 : 0;
+        int env = !ls.isNone(3) ? 3 : 0;
         ThreadStatus status = ls.loadFileX(fname, mode);
         return loadAux(ls, status, env);
     }
@@ -417,7 +418,7 @@ public class BasicLib {
         LuaType t = ls.type(2);
         ls.checkType(1, LUA_TTABLE);
         ls.argCheck(t == LUA_TNIL || t == LUA_TTABLE, 2,
-                "nil or table expected");
+            "nil or table expected");
         if (ls.getMetafield(1, METATABLE) != LUA_TNIL) {
             return ls.error2("cannot change a protected metatable");
         }

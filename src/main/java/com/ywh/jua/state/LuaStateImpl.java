@@ -6,6 +6,9 @@ import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
 import com.ywh.jua.number.LuaNumber;
 import com.ywh.jua.stdlib.BasicLib;
+import com.ywh.jua.stdlib.MathLib;
+import com.ywh.jua.stdlib.OSLib;
+import com.ywh.jua.stdlib.StringLib;
 import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
 
@@ -1768,7 +1771,9 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void openLibs() {
         Map<String, JavaFunction> libs = new HashMap<>();
         libs.put("_G", BasicLib::openBaseLib);
-
+        libs.put("math", MathLib::openMathLib);
+        libs.put("os", OSLib::openOSLib);
+        libs.put("string", StringLib::openStringLib);
         libs.forEach((name, fun) -> {
             requireF(name, fun, true);
             pop(1);

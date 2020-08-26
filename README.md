@@ -20,9 +20,9 @@ The purpose of building this project is to learn:
 
 - [x] Virtual Machine: (Instruction Set & Runner)
 - [x] Compiler: Lexer, AST Parser & Code Generator
-- [ ] Standard Library
-    - [ ] math
-    - [ ] string
+- [x] Standard Library
+    - [x] [math](#math)
+    - [x] [string](#string)
     - [ ] utf8
     - [ ] table
     - [ ] IO
@@ -86,10 +86,55 @@ The purpose of building this project is to learn:
 | 45 | OP_VARARG   | 0x2D       | iABC   | `R(A), R(A+1), ..., R(A+B-2) = vararg` |
 | 46 | OP_EXTRAARG | 0x2E       |    | `extra (larger) argument for previous opcode` |
 
-### Standard Library
+-->
+
+## Standard Library
+
+[Lua 5.3 Reference Manual](http://www.lua.org/manual/5.3/manual.html#pdf-math.random)
+
+### <span id="math">Math</span>
+
+| No.  | Function   | Synopsis                |
+| ---- | ---------- | ----------------------- |
+| 0    | random     | math.random ([m [, n]]) |
+| 1    | randomseed | math.randomseed (x)     |
+| 2    | max        | math.max (x, ···)       |
+| 3    | min        | math.min (x, ···)       |
+| 4    | exp        | math.exp (x)            |
+| 5    | log        | math.log (x [, base])   |
+| 6    | deg        | math.deg (x)            |
+| 7    | rad        | math.rad (x)            |
+| 8    | sin        | math.sin (x)            |
+| 9    | cos        | math.cos (x)            |
+| 10   | tan        | math.tan (x)            |
+| 11   | asin       | math.asin (x)           |
+| 12   | acos       | math.acos (x)           |
+| 13   | atan       | math.atan (y [, x])     |
+| 14   | ceil       | math.ceil (x)           |
+| 15   | floor      | math.floor (x)          |
+| 16   | abs        | math.abs (x)            |
+| 17   | sqrt       | math.sqrt (x)           |
+| 18   | fmod       | math.abs (x)            |
+| 19   | modf       | math.modf (x)           |
+| 20   | ult        | math.ult (m, n)         |
+| 21   | tointeger  | math.tointeger (x)      |
+| 22   | type       | math.type (x)           |
+| 23   | pi         |                         |
+| 24   | huge       |                         |
+| 25   | maxinteger |                         |
+| 26   | mininteger |                         |
+
+### <span id="string">String</span>
+
+| No.  | Function | Synopsis                  |
+| ---- | -------- | ------------------------- |
+| 0    | len      | string.len (s)            |
+| 1    | rep      | string.rep (s, n [, sep]) |
+| 2    | lower    | string.lower (s)          |
+| 3    | upper    | string.upper (s)          |
+|      |          |                           |
 
 ...
--->
 
 ## Example
 
