@@ -87,7 +87,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 
 -->
 
-## Standard Library
+## Standard Libraries
 
 [Lua 5.3 Reference Manual](http://www.lua.org/manual/5.3/manual.html)
 
