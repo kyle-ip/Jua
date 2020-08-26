@@ -156,7 +156,7 @@ end
 print(sum)
 ```
 
-execute the script
+Run the script
 
 ```shell
 java -jar jua-1.0-SNAPSHOT.jar hello_world.lua
