@@ -4,3 +4,5 @@ for i = 1, 100 do
         sum = sum + i
     end
 end
+print(sum)
+

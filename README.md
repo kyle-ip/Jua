@@ -91,14 +91,37 @@ The purpose of building this project is to learn:
 ...
 -->
 
-## Usage
+## Example
 
 JDK 1.8+, Maven 3+ Required.
 
 ```shell
-mvn test
-mvn clean install
+mvn clean package
 ```
+
+Lua script
+
+```lua
+local sum = 0
+for i = 1, 100 do
+    if i % 2 == 0 then
+        sum = sum + i
+    end
+end
+print(sum)
+```
+
+execute the script
+
+```shell
+java -jar jua-1.0-SNAPSHOT.jar hello_world.lua
+```
+
+```
+2550
+```
+
+
 
 ## Links
 

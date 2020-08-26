@@ -1,6 +1,5 @@
 package com.ywh.jua;
 
-import com.google.gson.GsonBuilder;
 import com.ywh.jua.api.LuaState;
 import com.ywh.jua.api.LuaType;
 import com.ywh.jua.api.ThreadStatus;
@@ -32,11 +31,19 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) {
-        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.lua";
+
+        if (args.length > 0) {
+            LuaState ls = new LuaStateImpl();
+            ls.openLibs();
+            ls.loadFile(args[0]);
+            ls.call(0, -1);
+        }
+
+//        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.lua";
 
 //        byte[] data = Files.readAllBytes(Paths.get(fileName));
 
-        LuaState ls = new LuaStateImpl();
+//        LuaState ls = new LuaStateImpl();
 
 //        Prototype proto = BinaryChunk.undump(data);
 //        list(proto);
@@ -59,15 +66,15 @@ public class Main {
 //        testLexer(new String(data), fileName);
 //        testParser(new String(data), fileName);
 
-        ls.openLibs();
-        ls.loadFile(fileName);
-        ls.call(0, -1);
+//        ls.openLibs();
+//        ls.loadFile(fileName);
+//        ls.call(0, -1);
     }
 
     private static void testParser(String chunk, String chunkName) {
         Block block = Parser.parse(chunk, chunkName);
-        String json = new GsonBuilder().setPrettyPrinting().create().toJson(block);
-        System.out.println(json);
+//        String json = new GsonBuilder().setPrettyPrinting().create().toJson(block);
+//        System.out.println(json);
     }
 
     private static void testLexer(String chunk, String chunkName) {
