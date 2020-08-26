@@ -11,6 +11,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * 字符串库
+ *
  * @author ywh
  * @since 2020/8/26/026
  */

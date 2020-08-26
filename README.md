@@ -18,16 +18,17 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 
 - [x] Virtual Machine: (Instruction Set & Runner)
 - [x] Compiler: Lexer, AST Parser & Code Generator
-- [x] Standard Library Support
-    - [x] [math](#math)
-    - [x] [string](#string)
-    - [ ] utf8
-    - [ ] table
-    - [ ] IO
-    - [ ] OS
-    - [ ] package
-    - [ ] coroutine
-    - [ ] debug
+- [x] Standard Libraries
+    - [x] basic library
+    - [x] [mathematical functions](#Math)
+    - [x] [string manipulation](#String)
+    - [ ] basic UTF-8 support
+    - [ ] table manipulation
+    - [ ] input and output
+    - [ ] operating system facilities
+    - [x] [package library](#Modules)
+    - [ ] coroutine library
+    - [ ] debug facilities
 - [x] Metaprogramming
 
 <!--
@@ -90,7 +91,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 
 [Lua 5.3 Reference Manual](http://www.lua.org/manual/5.3/manual.html)
 
-### <span id="math">Math</span>
+### <span id="Math">Math</span>
 
 | No.  | Function   | Synopsis                                          |
 | ---- | ---------- | ------------------------------------------------- |
@@ -122,7 +123,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 | 25   | maxinteger | An integer with the maximum value for an integer. |
 | 26   | mininteger | An integer with the minimum value for an integer. |
 
-### <span id="string">String</span>
+### <span id="String">String</span>
 
 | No.  | Function | Synopsis                  |
 | ---- | -------- | ------------------------- |
@@ -131,6 +132,17 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 | 2    | lower    | string.lower (s)          |
 | 3    | upper    | string.upper (s)          |
 |      |          |                           |
+
+...
+
+### <span id="Modules">Modules</span>
+
+| No.  | Function   | Synopsis                                        |
+| ---- | ---------- | ----------------------------------------------- |
+| 0    | require    | require (modname)                               |
+| 1    | searchers  | package.searchers                               |
+| 2    | searchpath | package.searchpath (name, path [, sep [, rep]]) |
+|      |            |                                                 |
 
 ...
 

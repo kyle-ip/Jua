@@ -1066,12 +1066,12 @@ public class Instructions {
     }
 
     /**
-     * 转换 Upvalue 索引。
+     * 转换 Upvalue 索引
      *
      * @param i
      * @return
      */
-    private static int luaUpvalueIndex(int i) {
+    public static int luaUpvalueIndex(int i) {
         return LUA_REGISTRYINDEX - i;
     }
 

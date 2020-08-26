@@ -315,5 +315,4 @@ public enum OpCode {
         this.opMode = opMode;
         this.action = action;
     }
-
 }

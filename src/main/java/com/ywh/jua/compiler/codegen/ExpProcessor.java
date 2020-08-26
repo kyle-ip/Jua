@@ -142,8 +142,7 @@ class ExpProcessor {
             }
         }
         int nExps = node.getKeyExps().size();
-        boolean multRet = nExps > 0 &&
-            ExpHelper.isVarargOrFuncCall(node.getValExps().get(nExps - 1));
+        boolean multRet = nExps > 0 && ExpHelper.isVarargOrFuncCall(node.getValExps().get(nExps - 1));
 
         fi.emitNewTable(node.getLine(), a, nArr, nExps - nArr);
 

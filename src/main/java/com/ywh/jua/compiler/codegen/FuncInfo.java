@@ -633,8 +633,7 @@ class FuncInfo {
      * @param nRec
      */
     void emitNewTable(int line, int a, int nArr, int nRec) {
-        emitABC(line, OpCode.NEWTABLE,
-            a, FPB.int2fb(nArr), FPB.int2fb(nRec));
+        emitABC(line, OpCode.NEWTABLE, a, FPB.int2fb(nArr), FPB.int2fb(nRec));
     }
 
     /**

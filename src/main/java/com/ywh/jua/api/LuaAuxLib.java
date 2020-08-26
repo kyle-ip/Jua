@@ -116,10 +116,10 @@ public interface LuaAuxLib {
 
     /**
      *
-     * @param filename
+     * @param fileName
      * @return
      */
-    boolean doFile(String filename);
+    boolean doFile(String fileName);
 
     /**
      * 加载并使用保护模式执行字符串
@@ -132,19 +132,19 @@ public interface LuaAuxLib {
     /**
      * 加载文件
      *
-     * @param filename
+     * @param fileName
      * @return
      */
-    ThreadStatus loadFile(String filename);
+    ThreadStatus loadFile(String fileName);
 
     /**
      * 以默认模式加载文件
      *
-     * @param filename
+     * @param fileName
      * @param mode
      * @return
      */
-    ThreadStatus loadFileX(String filename, String mode);
+    ThreadStatus loadFileX(String fileName, String mode);
 
     /**
      * 加载字符串
@@ -162,6 +162,8 @@ public interface LuaAuxLib {
      * @return
      */
     String typeName2(int idx);
+
+    String toStringX(int idx);
 
     /**
      *

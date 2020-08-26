@@ -1,7 +1,9 @@
 package com.ywh.jua;
 
+import com.google.gson.GsonBuilder;
 import com.ywh.jua.api.LuaState;
 import com.ywh.jua.api.LuaType;
+import com.ywh.jua.api.LuaVM;
 import com.ywh.jua.api.ThreadStatus;
 import com.ywh.jua.chunk.LocVar;
 import com.ywh.jua.chunk.Prototype;
@@ -12,10 +14,18 @@ import com.ywh.jua.compiler.lexer.Token;
 import com.ywh.jua.compiler.lexer.TokenKind;
 import com.ywh.jua.compiler.parser.Parser;
 import com.ywh.jua.state.LuaStateImpl;
+import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static com.ywh.jua.api.LuaType.LUA_TNIL;
 import static com.ywh.jua.api.ThreadStatus.LUA_OK;
+import static com.ywh.jua.chunk.BinaryChunk.isBinaryChunk;
+import static com.ywh.jua.chunk.BinaryChunk.undump;
+import static com.ywh.jua.compiler.Compiler.compile;
 import static com.ywh.jua.compiler.lexer.TokenKind.*;
 import static com.ywh.jua.vm.Instruction.*;
 import static com.ywh.jua.vm.OpArgMask.*;
@@ -30,20 +40,23 @@ public class Main {
      * @param args
      * @throws Exception
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
-        if (args.length > 0) {
-            LuaState ls = new LuaStateImpl();
-            ls.openLibs();
-            ls.loadFile(args[0]);
-            ls.call(0, -1);
-        }
+        String fileName = "C:\\Project\\other-project\\jua\\test.lua";
 
-//        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.lua";
+        LuaStateImpl ls = new LuaStateImpl();
+        ls.openLibs();
+        ls.loadFile(fileName);
+        ls.call(0, -1);
+
+//        if (args.length > 0) {
+//            LuaState ls = new LuaStateImpl();
+//            ls.openLibs();
+//            ls.loadFile("C:\\Project\\other-project\\jua\\target\\test.lua");
+//            ls.call(0, -1);
+//        }
 
 //        byte[] data = Files.readAllBytes(Paths.get(fileName));
-
-//        LuaState ls = new LuaStateImpl();
 
 //        Prototype proto = BinaryChunk.undump(data);
 //        list(proto);
@@ -62,19 +75,15 @@ public class Main {
 //        ls.load(data, fileName, "bt");
 //        ls.call(0, 0);
 
-//        byte[] data = Files.readAllBytes(Paths.get(fileName));
+        byte[] data = Files.readAllBytes(Paths.get(fileName));
 //        testLexer(new String(data), fileName);
 //        testParser(new String(data), fileName);
-
-//        ls.openLibs();
-//        ls.loadFile(fileName);
-//        ls.call(0, -1);
     }
 
     private static void testParser(String chunk, String chunkName) {
         Block block = Parser.parse(chunk, chunkName);
-//        String json = new GsonBuilder().setPrettyPrinting().create().toJson(block);
-//        System.out.println(json);
+        String json = new GsonBuilder().setPrettyPrinting().create().toJson(block);
+        System.out.println(json);
     }
 
     private static void testLexer(String chunk, String chunkName) {
@@ -200,59 +209,7 @@ public class Main {
         return 1;
     }
 
-//    /**
-//     * 从函数原型解析指令
-//     *
-//     * @param proto
-//     */
-//    private static void luaMain(Prototype proto) {
-//        LuaVM vm = new LuaStateImpl(proto);
-//        vm.setTop(proto.getMaxStackSize());
-//        for (;;) {
-//            // 取程序计数器、下一条指令
-//            int pc = vm.getPC(), i = vm.fetch();
-//            OpCode opCode = Instruction.getOpCode(i);
-//            if (opCode != OpCode.RETURN && opCode.getAction() != null) {
-//                opCode.getAction().execute(i, vm);
-//                // 打印 PC 和指令名称
-//                System.out.printf("[%02d] %-8s ", pc + 1, opCode.name());
-//                // 打印栈
-//                printStack(vm);
-//            } else {
-//                break;
-//            }
-//        }
-//    }
 
-    /**
-     * 打印 Lua 栈
-     *
-     * @param ls
-     */
-    private static void printStack(LuaState ls) {
-        for (int i = 1; i <= ls.getTop(); i++) {
-            LuaType t = ls.type(i);
-            switch (t) {
-                case LUA_TBOOLEAN:
-                    System.out.printf("[%b]", ls.toBoolean(i));
-                    break;
-                case LUA_TNUMBER:
-                    if (ls.isInteger(i)) {
-                        System.out.printf("[%d]", ls.toInteger(i));
-                    } else {
-                        System.out.printf("[%f]", ls.toNumber(i));
-                    }
-                    break;
-                case LUA_TSTRING:
-                    System.out.printf("[\"%s\"]", ls.toString(i));
-                    break;
-                default: // other values
-                    System.out.printf("[%s]", ls.typeName(t));
-                    break;
-            }
-        }
-        System.out.println();
-    }
 
     /**
      * 打印函数原型信息

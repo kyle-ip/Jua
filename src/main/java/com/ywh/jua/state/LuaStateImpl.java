@@ -5,10 +5,7 @@ import com.ywh.jua.api.*;
 import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
 import com.ywh.jua.number.LuaNumber;
-import com.ywh.jua.stdlib.BasicLib;
-import com.ywh.jua.stdlib.MathLib;
-import com.ywh.jua.stdlib.OSLib;
-import com.ywh.jua.stdlib.StringLib;
+import com.ywh.jua.stdlib.*;
 import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
 
@@ -621,7 +618,8 @@ public class LuaStateImpl implements LuaState, LuaVM {
             }
         }
         // TODO
-        throw new RuntimeException("not a table!");
+//        return LuaValue.typeOf(null);
+        throw new RuntimeException(String.format("%s is not a table!", t));
     }
 
     /* set functions (stack -> Lua) */
@@ -757,7 +755,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         // 如果存在，则以该值为第一个参数，后跟原方法调用的其他参数来调用元方法。
         if (f == null) {
             Object mf = getMetafield(val, "__call");
-            if (mf != null && mf instanceof Closure) {
+            if (mf instanceof Closure) {
                 stack.push(f);
                 insert(-(nArgs + 2));
                 nArgs += 1;
@@ -858,7 +856,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * 逐条执行被调用函数的指令，直到遇到 RETURN 指令。
      */
     private void runLuaClosure() {
-        for (; ; ) {
+        for (;;) {
             int i = fetch();
             OpCode opCode = Instruction.getOpCode(i);
             opCode.getAction().execute(i, this);
@@ -936,6 +934,10 @@ public class LuaStateImpl implements LuaState, LuaVM {
                 throw new RuntimeException("concatenation error!");
             }
         }
+    }
+
+    public int getPC() {
+        return stack.pc;
     }
 
 
@@ -1212,7 +1214,6 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * @return
      */
     private LuaTable getMetatable(Object val) {
-
         if (val instanceof LuaTable) {
             return ((LuaTable) val).metatable;
         }
@@ -1587,8 +1588,8 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     @Override
-    public boolean doFile(String filename) {
-        return loadFile(filename) == LUA_OK &&
+    public boolean doFile(String fileName) {
+        return loadFile(fileName) == LUA_OK &&
             pCall(0, LUA_MULTRET, 0) == LUA_OK;
     }
 
@@ -1606,26 +1607,26 @@ public class LuaStateImpl implements LuaState, LuaVM {
     /**
      * 加载文件
      *
-     * @param filename
+     * @param fileName
      * @return
      */
     @Override
-    public ThreadStatus loadFile(String filename) {
-        return loadFileX(filename, "bt");
+    public ThreadStatus loadFile(String fileName) {
+        return loadFileX(fileName, "bt");
     }
 
     /**
      * 以默认模式加载文件
      *
-     * @param filename
+     * @param fileName
      * @param mode
      * @return
      */
     @Override
-    public ThreadStatus loadFileX(String filename, String mode) {
+    public ThreadStatus loadFileX(String fileName, String mode) {
         try {
-            byte[] data = Files.readAllBytes(Paths.get(filename));
-            return load(data, "@" + filename, mode);
+            byte[] data = Files.readAllBytes(Paths.get(fileName));
+            return load(data, "@" + fileName, mode);
         } catch (IOException e) {
             return LUA_ERRFILE;
         }
@@ -1663,6 +1664,20 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
         pop(1);
         return i;
+    }
+
+    @Override
+    public String toStringX(int idx) {
+        Object val = stack.get(idx);
+        if (val instanceof String) {
+            return (String) val;
+        } else if (val instanceof Long || val instanceof Double) {
+            String s = String.valueOf(val);
+            stack.set(idx, s);
+            return s;
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -1772,8 +1787,9 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Map<String, JavaFunction> libs = new HashMap<>();
         libs.put("_G", BasicLib::openBaseLib);
         libs.put("math", MathLib::openMathLib);
-        libs.put("os", OSLib::openOSLib);
-        libs.put("string", StringLib::openStringLib);
+//        libs.put("os", OSLib::openOSLib);
+//        libs.put("string", StringLib::openStringLib);
+        libs.put("package", PackageLib::openPackageLib);
         libs.forEach((name, fun) -> {
             requireF(name, fun, true);
             pop(1);
@@ -1895,5 +1911,74 @@ public class LuaStateImpl implements LuaState, LuaVM {
         String msg = tname + " expected, got " + typeArg;
         pushString(msg);
         argError(arg, msg);
+    }
+
+    /**
+     * 从函数原型解析指令
+     *
+     * @param fileName
+     * @throws IOException
+     */
+    public void loadInstructions(String fileName) throws IOException {
+        byte[] chunk = Files.readAllBytes(Paths.get(fileName));
+        Prototype proto = isBinaryChunk(chunk) ? undump(chunk) : compile(new String(chunk), "@" + fileName);
+        this.stack.closure = new Closure(proto);
+
+        Closure closure = new Closure(proto);
+        stack.push(closure);
+
+        // 闭包需要 Upvalue
+        if (proto.getUpvalues().length > 0) {
+            // 第一个 Upvalue（对于主函数来说是 _ENV）会被初始化为全局环境，其他的 Upvalue 会被初始化成 nil。
+            // 由于 Upvalue 的初始值为 nil，所以只要把第一个 Upvalue 值设置成全局环境即可。
+            Object env = registry.get(LUA_RIDX_GLOBALS);
+            closure.upvals[0] = new UpvalueHolder(env);
+        }
+        for (;;) {
+            // 取程序计数器、下一条指令
+            int pc = this.getPC(), i = this.fetch();
+            OpCode opCode = Instruction.getOpCode(i);
+            if (opCode != OpCode.RETURN && opCode.getAction() != null) {
+                System.out.println(opCode.name());
+                opCode.getAction().execute(i, this);
+                // 打印 PC 和指令名称
+                System.out.printf("[%02d] %-8s ", pc + 1, opCode.name());
+                // 打印栈
+                printStack(this);
+            } else {
+                break;
+            }
+        }
+    }
+
+
+    /**
+     * 打印 Lua 栈
+     *
+     * @param ls
+     */
+    private static void printStack(LuaState ls) {
+        for (int i = 1; i <= ls.getTop(); i++) {
+            LuaType t = ls.type(i);
+            switch (t) {
+                case LUA_TBOOLEAN:
+                    System.out.printf("[%b]", ls.toBoolean(i));
+                    break;
+                case LUA_TNUMBER:
+                    if (ls.isInteger(i)) {
+                        System.out.printf("[%d]", ls.toInteger(i));
+                    } else {
+                        System.out.printf("[%f]", ls.toNumber(i));
+                    }
+                    break;
+                case LUA_TSTRING:
+                    System.out.printf("[\"%s\"]", ls.toString(i));
+                    break;
+                default: // other values
+                    System.out.printf("[%s]", ls.typeName(t));
+                    break;
+            }
+        }
+        System.out.println();
     }
 }

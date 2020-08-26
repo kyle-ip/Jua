@@ -3,6 +3,7 @@ package com.ywh.jua.compiler.ast.exps;
 
 import com.ywh.jua.compiler.ast.BaseExp;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,12 +17,12 @@ public class TableConstructorExp extends BaseExp {
     /**
      * 键列表
      */
-    private List<BaseExp> keyExps;
+    private List<BaseExp> keyExps = new ArrayList<>();
 
     /**
      * 值列表
      */
-    private List<BaseExp> valExps;
+    private List<BaseExp> valExps = new ArrayList<>();
 
     public List<BaseExp> getKeyExps() {
         return keyExps;
