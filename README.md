@@ -7,9 +7,7 @@ A simplified Lua written in Java.
 
 ## Introduction
 
-Jua is a simplified Lua (5.3) implementation written in Java. 
-
-The purpose of building this project is to learn:
+Jua is a simplified Lua (5.3) implementation written in Java. The purpose of building this project is to learn:
 
 - Data Structure
 - Register-based Virtual Machine & Instruction Set Design
@@ -20,7 +18,7 @@ The purpose of building this project is to learn:
 
 - [x] Virtual Machine: (Instruction Set & Runner)
 - [x] Compiler: Lexer, AST Parser & Code Generator
-- [x] Standard Library
+- [x] Standard Library Support
     - [x] [math](#math)
     - [x] [string](#string)
     - [ ] utf8
@@ -138,13 +136,20 @@ The purpose of building this project is to learn:
 
 ## Example
 
-JDK 1.8+, Maven 3+ Required.
+### Dependencies
+
+- JDK 1.8+
+- Maven 3+ 
+
+### Build
 
 ```shell
 mvn clean package
 ```
 
-Lua script
+### Script
+
+hello_world.lua
 
 ```lua
 local sum = 0
@@ -156,7 +161,7 @@ end
 print(sum)
 ```
 
-Run the script
+### Run
 
 ```shell
 java -jar jua-1.0-SNAPSHOT.jar hello_world.lua
@@ -165,8 +170,6 @@ java -jar jua-1.0-SNAPSHOT.jar hello_world.lua
 ```
 2550
 ```
-
-
 
 ## Links
 
