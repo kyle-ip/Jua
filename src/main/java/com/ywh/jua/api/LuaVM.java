@@ -31,7 +31,7 @@ public interface LuaVM extends LuaState {
      *
      * @param rk
      */
-    void getRK(int rk);
+    void getRk(int rk);
 
     /**
      *

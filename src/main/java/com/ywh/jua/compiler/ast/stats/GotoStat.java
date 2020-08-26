@@ -1,14 +1,14 @@
 package com.ywh.jua.compiler.ast.stats;
 
 
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 /**
  *
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class GotoStat extends Stat {
+public class GotoStat extends BaseStat {
 
     private String name;
 

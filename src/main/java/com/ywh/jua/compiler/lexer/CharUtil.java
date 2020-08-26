@@ -18,7 +18,8 @@ class CharUtil {
         switch (c) {
             case '\t':
             case '\n':
-            case 0x0B: // \v
+            // \v
+            case 0x0B:
             case '\f':
             case '\r':
             case ' ':

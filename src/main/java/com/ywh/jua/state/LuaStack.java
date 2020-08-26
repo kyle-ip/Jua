@@ -74,9 +74,7 @@ class LuaStack {
      * @param val
      */
     void push(Object val) {
-
-        // TODO
-        if (slots.size() > 10000) {
+        if (slots.size() > 10_000) {
             throw new StackOverflowError();
         }
         slots.add(val);
@@ -195,7 +193,8 @@ class LuaStack {
      * @param val
      */
     void set(int idx, Object val) {
-        if (idx < LUA_REGISTRYINDEX) { /* upvalues */
+        /* upvalues */
+        if (idx < LUA_REGISTRYINDEX) {
             int uvIdx = LUA_REGISTRYINDEX - idx - 1;
             if (closure != null && closure.upvals.length > uvIdx && closure.upvals[uvIdx] != null) {
                 closure.upvals[uvIdx].set(val);

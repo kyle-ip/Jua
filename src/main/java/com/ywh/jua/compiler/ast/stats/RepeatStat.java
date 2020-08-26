@@ -2,21 +2,21 @@ package com.ywh.jua.compiler.ast.stats;
 
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 /**
  *
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class RepeatStat extends Stat {
+public class RepeatStat extends BaseStat {
 
     private Block block;
 
-    private Exp exp;
+    private BaseExp exp;
 
-    public RepeatStat(Block block, Exp exp) {
+    public RepeatStat(Block block, BaseExp exp) {
         this.block = block;
         this.exp = exp;
     }
@@ -29,11 +29,11 @@ public class RepeatStat extends Stat {
         this.block = block;
     }
 
-    public Exp getExp() {
+    public BaseExp getExp() {
         return exp;
     }
 
-    public void setExp(Exp exp) {
+    public void setExp(BaseExp exp) {
         this.exp = exp;
     }
 }

@@ -55,9 +55,9 @@ public enum LuaType {
     LUA_TTHREAD,
 
     /**
-     * none（Lua 栈可以按索引取值，因此提供无效索引）
+     * none（Lua 栈可以按索引取值，因此提供无效索引），-1
      */
-    LUA_TNONE, // -1
+    LUA_TNONE,
     ;
 
 }

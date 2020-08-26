@@ -1,7 +1,7 @@
 package com.ywh.jua.compiler.parser;
 
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.ast.exps.*;
 import com.ywh.jua.number.LuaMath;
 import com.ywh.jua.number.LuaNumber;
@@ -23,13 +23,15 @@ class Optimizer {
      * @param exp
      * @return
      */
-    static Exp optimizeLogicalOr(BinopExp exp) {
+    static BaseExp optimizeLogicalOr(BinopExp exp) {
         // 短路计算
         if (isTrue(exp.getExp1())) {
-            return exp.getExp1(); // true or x => true
+            // true or x => true
+            return exp.getExp1();
         }
         if (isFalse(exp.getExp1()) && !isVarargOrFuncCall(exp.getExp2())) {
-            return exp.getExp2(); // false or x => x
+            // false or x => x
+            return exp.getExp2();
         }
         return exp;
     }
@@ -40,13 +42,15 @@ class Optimizer {
      * @param exp
      * @return
      */
-    static Exp optimizeLogicalAnd(BinopExp exp) {
+    static BaseExp optimizeLogicalAnd(BinopExp exp) {
         // 短路计算
         if (isFalse(exp.getExp1())) {
-            return exp.getExp1(); // false and x => false
+            // false and x => false
+            return exp.getExp1();
         }
         if (isTrue(exp.getExp1()) && !isVarargOrFuncCall(exp.getExp2())) {
-            return exp.getExp2(); // true and x => x
+            // true and x => x
+            return exp.getExp2();
         }
         return exp;
     }
@@ -57,7 +61,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    static Exp optimizeBitwiseBinaryOp(BinopExp exp) {
+    static BaseExp optimizeBitwiseBinaryOp(BinopExp exp) {
         Long i = castToInteger(exp.getExp1());
         if (i != null) {
             Long j = castToInteger(exp.getExp2());
@@ -87,7 +91,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    static Exp optimizeArithBinaryOp(BinopExp exp) {
+    static BaseExp optimizeArithBinaryOp(BinopExp exp) {
         if (exp.getExp1() instanceof IntegerExp
                 && exp.getExp2() instanceof IntegerExp) {
             IntegerExp x = (IntegerExp) exp.getExp1();
@@ -153,7 +157,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    static Exp optimizePow(Exp exp) {
+    static BaseExp optimizePow(BaseExp exp) {
         if (exp instanceof BinopExp) {
             BinopExp binopExp = (BinopExp) exp;
             if (binopExp.getOp() == TOKEN_OP_POW) {
@@ -170,7 +174,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    static Exp optimizeUnaryOp(UnopExp exp) {
+    static BaseExp optimizeUnaryOp(UnopExp exp) {
         switch (exp.getOp()) {
             case TOKEN_OP_UNM:
                 return optimizeUnm(exp);
@@ -188,7 +192,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static Exp optimizeUnm(UnopExp exp) {
+    private static BaseExp optimizeUnm(UnopExp exp) {
         if (exp.getExp() instanceof IntegerExp) {
             IntegerExp iExp = (IntegerExp) exp.getExp();
             iExp.setVal(-iExp.getVal());
@@ -207,8 +211,8 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static Exp optimizeNot(UnopExp exp) {
-        Exp subExp = exp.getExp();
+    private static BaseExp optimizeNot(UnopExp exp) {
+        BaseExp subExp = exp.getExp();
         if (subExp instanceof NilExp || subExp instanceof FalseExp) {
             return new TrueExp(exp.getLine());
         }
@@ -223,7 +227,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static Exp optimizeBnot(UnopExp exp) {
+    private static BaseExp optimizeBnot(UnopExp exp) {
         if (exp.getExp() instanceof IntegerExp) {
             IntegerExp iExp = (IntegerExp) exp.getExp();
             iExp.setVal(~iExp.getVal());
@@ -244,7 +248,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static boolean isFalse(Exp exp) {
+    private static boolean isFalse(BaseExp exp) {
         return exp instanceof FalseExp || exp instanceof NilExp;
     }
 
@@ -253,7 +257,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static boolean isTrue(Exp exp) {
+    private static boolean isTrue(BaseExp exp) {
         return exp instanceof TrueExp || exp instanceof IntegerExp || exp instanceof FloatExp || exp instanceof StringExp;
     }
 
@@ -262,7 +266,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static boolean isVarargOrFuncCall(Exp exp) {
+    private static boolean isVarargOrFuncCall(BaseExp exp) {
         return exp instanceof VarargExp || exp instanceof FuncCallExp;
     }
 
@@ -271,7 +275,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static Long castToInteger(Exp exp) {
+    private static Long castToInteger(BaseExp exp) {
         if (exp instanceof IntegerExp) {
             return ((IntegerExp) exp).getVal();
         }
@@ -287,7 +291,7 @@ class Optimizer {
      * @param exp
      * @return
      */
-    private static Double castToFloat(Exp exp) {
+    private static Double castToFloat(BaseExp exp) {
         if (exp instanceof IntegerExp) {
             return (double) ((IntegerExp) exp).getVal();
         }

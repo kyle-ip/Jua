@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.ast.stats;
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class ForInStat extends Stat {
+public class ForInStat extends BaseStat {
 
     /**
      * do 所在行号
@@ -30,7 +30,7 @@ public class ForInStat extends Stat {
     /**
      * in 右侧的表达式列表
      */
-    private List<Exp> expList;
+    private List<BaseExp> expList;
 
     /**
      * 代码块
@@ -53,11 +53,11 @@ public class ForInStat extends Stat {
         this.nameList = nameList;
     }
 
-    public List<Exp> getExpList() {
+    public List<BaseExp> getExpList() {
         return expList;
     }
 
-    public void setExpList(List<Exp> expList) {
+    public void setExpList(List<BaseExp> expList) {
         this.expList = expList;
     }
 

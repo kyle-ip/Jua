@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.codegen;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.ast.exps.*;
 import com.ywh.jua.vm.OpCode;
 
@@ -18,13 +18,23 @@ import static com.ywh.jua.compiler.lexer.TokenKind.*;
  */
 class ExpProcessor {
 
-    // kind of operands
-    static final int ARG_CONST = 1; // const index
-    static final int ARG_REG   = 2; // register index
-    static final int ARG_UPVAL = 4; // upvalue index
-    static final int ARG_RK    = ARG_REG | ARG_CONST;
-    static final int ARG_RU    = ARG_REG | ARG_UPVAL;
-  //static final int ARG_RUK   = ARG_REG | ARG_UPVAL | ARG_CONST;
+    /**
+     * const index
+     */
+    private static final int ARG_CONST = 1;
+
+    /**
+     * register index
+     */
+    static final int ARG_REG = 2;
+
+    /**
+     * upvalue index
+     */
+    private static final int ARG_UPVAL = 4;
+    private static final int ARG_RK = ARG_REG | ARG_CONST;
+    private static final int ARG_RU = ARG_REG | ARG_UPVAL;
+    static final int ARG_RUK = ARG_REG | ARG_UPVAL | ARG_CONST;
 
     static class ArgAndKind {
         int arg;
@@ -39,7 +49,7 @@ class ExpProcessor {
      * @param a
      * @param n
      */
-    static void processExp(FuncInfo fi, Exp node, int a, int n) {
+    static void processExp(FuncInfo fi, BaseExp node, int a, int n) {
         if (node instanceof NilExp) {
             fi.emitLoadNil(node.getLine(), a, n);
         } else if (node instanceof FalseExp) {
@@ -126,32 +136,33 @@ class ExpProcessor {
      */
     private static void processTableConstructorExp(FuncInfo fi, TableConstructorExp node, int a) {
         int nArr = 0;
-        for (Exp keyExp : node.getKeyExps()) {
+        for (BaseExp keyExp : node.getKeyExps()) {
             if (keyExp == null) {
                 nArr++;
             }
         }
         int nExps = node.getKeyExps().size();
         boolean multRet = nExps > 0 &&
-                ExpHelper.isVarargOrFuncCall(node.getValExps().get(nExps-1));
+            ExpHelper.isVarargOrFuncCall(node.getValExps().get(nExps - 1));
 
-        fi.emitNewTable(node.getLine(), a, nArr, nExps-nArr);
+        fi.emitNewTable(node.getLine(), a, nArr, nExps - nArr);
 
         int arrIdx = 0;
         for (int i = 0; i < node.getKeyExps().size(); i++) {
-            Exp keyExp = node.getKeyExps().get(i);
-            Exp valExp = node.getValExps().get(i);
+            BaseExp keyExp = node.getKeyExps().get(i);
+            BaseExp valExp = node.getValExps().get(i);
 
             if (keyExp == null) {
                 arrIdx++;
                 int tmp = fi.allocReg();
-                if (i == nExps-1 && multRet) {
+                if (i == nExps - 1 && multRet) {
                     processExp(fi, valExp, tmp, -1);
                 } else {
                     processExp(fi, valExp, tmp, 1);
                 }
 
-                if (arrIdx%50 == 0 || arrIdx == nArr) { // LFIELDS_PER_FLUSH
+                // LFIELDS_PER_FLUSH
+                if (arrIdx % 50 == 0 || arrIdx == nArr) {
                     int n = arrIdx % 50;
                     if (n == 0) {
                         n = 50;
@@ -159,8 +170,8 @@ class ExpProcessor {
                     fi.freeRegs(n);
                     int line = ExpHelper.lastLineOf(valExp);
                     // TODO: c > 0xFF
-                    int c = (arrIdx-1)/50 + 1;
-                    if (i == nExps-1 && multRet) {
+                    int c = (arrIdx - 1) / 50 + 1;
+                    if (i == nExps - 1 && multRet) {
                         fi.emitSetList(line, a, 0, c);
                     } else {
                         fi.emitSetList(line, a, n, c);
@@ -185,7 +196,6 @@ class ExpProcessor {
 
     /**
      * 处理运算符表达式
-     *
      * r[a] = op exp
      *
      * @param fi
@@ -199,7 +209,13 @@ class ExpProcessor {
         fi.usedRegs = oldRegs;
     }
 
-    // r[a] = exp1 op exp2
+    /**
+     * r[a] = exp1 op exp2
+     *
+     * @param fi
+     * @param node
+     * @param a
+     */
     private static void processBinopExp(FuncInfo fi, BinopExp node, int a) {
         if (node.getOp() == TOKEN_OP_AND || node.getOp() == TOKEN_OP_OR) {
             int oldRegs = fi.usedRegs;
@@ -216,7 +232,7 @@ class ExpProcessor {
             b = expToOpArg(fi, node.getExp2(), ARG_REG).arg;
             fi.usedRegs = oldRegs;
             fi.emitMove(node.getLine(), a, b);
-            fi.fixSbx(pcOfJmp, fi.pc()-pcOfJmp);
+            fi.fixSbx(pcOfJmp, fi.pc() - pcOfJmp);
         } else {
             int oldRegs = fi.usedRegs;
             int b = expToOpArg(fi, node.getExp1(), ARG_RK).arg;
@@ -228,7 +244,7 @@ class ExpProcessor {
 
     /**
      * 处理拼接表达式
-     *
+     * <p>
      * r[a] = exp1 .. exp2
      *
      * @param fi
@@ -236,7 +252,7 @@ class ExpProcessor {
      * @param a
      */
     private static void processConcatExp(FuncInfo fi, ConcatExp node, int a) {
-        for (Exp subExp : node.getExps()) {
+        for (BaseExp subExp : node.getExps()) {
             int a1 = fi.allocReg();
             processExp(fi, subExp, a1, 1);
         }
@@ -249,7 +265,7 @@ class ExpProcessor {
 
     /**
      * 处理名称表达式
-     *
+     * <p>
      * r[a] = name
      *
      * @param fi
@@ -270,13 +286,19 @@ class ExpProcessor {
         }
 
         // x => _ENV['x']
-        Exp prefixExp = new NameExp(node.getLine(), "_ENV");
-        Exp keyExp = new StringExp(node.getLine(), node.getName());
+        BaseExp prefixExp = new NameExp(node.getLine(), "_ENV");
+        BaseExp keyExp = new StringExp(node.getLine(), node.getName());
         TableAccessExp taExp = new TableAccessExp(node.getLine(), prefixExp, keyExp);
         processTableAccessExp(fi, taExp, a);
     }
 
-    // r[a] = prefix[key]
+    /**
+     * r[a] = prefix[key]
+     *
+     * @param fi
+     * @param node
+     * @param a
+     */
     private static void processTableAccessExp(FuncInfo fi, TableAccessExp node, int a) {
         int oldRegs = fi.usedRegs;
         ArgAndKind argAndKindB = expToOpArg(fi, node.getPrefixExp(), ARG_RU);
@@ -293,7 +315,7 @@ class ExpProcessor {
 
     /**
      * 处理函数调用表达式
-     *
+     * <p>
      * r[a] = f(args)
      *
      * @param fi
@@ -308,7 +330,7 @@ class ExpProcessor {
 
     /**
      * 处理尾递归函数调用表达式
-     *
+     * <p>
      * return f(args)
      *
      * @param fi
@@ -321,7 +343,7 @@ class ExpProcessor {
     }
 
     private static int prepFuncCall(FuncInfo fi, FuncCallExp node, int a) {
-        List<Exp> args = node.getArgs();
+        List<BaseExp> args = node.getArgs();
         if (args == null) {
             args = Collections.emptyList();
         }
@@ -338,9 +360,9 @@ class ExpProcessor {
             }
         }
         for (int i = 0; i < args.size(); i++) {
-            Exp arg = args.get(i);
+            BaseExp arg = args.get(i);
             int tmp = fi.allocReg();
-            if (i == nArgs-1 && ExpHelper.isVarargOrFuncCall(arg)) {
+            if (i == nArgs - 1 && ExpHelper.isVarargOrFuncCall(arg)) {
                 lastArgIsVarargOrFuncCall = true;
                 processExp(fi, arg, tmp, -1);
             } else {
@@ -360,7 +382,7 @@ class ExpProcessor {
         return nArgs;
     }
 
-    static ArgAndKind expToOpArg(FuncInfo fi, Exp node, int argKinds) {
+    static ArgAndKind expToOpArg(FuncInfo fi, BaseExp node, int argKinds) {
         ArgAndKind ak = new ArgAndKind();
 
         if ((argKinds & ARG_CONST) > 0) {

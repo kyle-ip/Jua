@@ -1,7 +1,7 @@
 package com.ywh.jua.compiler.ast.exps;
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class FuncDefExp extends Exp {
+public class FuncDefExp extends BaseExp {
 
     /**
      * 参数表
@@ -21,7 +21,7 @@ public class FuncDefExp extends Exp {
     /**
      * 是否变长参数
      */
-    private boolean IsVararg;
+    private boolean isVararg;
 
     /**
      * 代码块
@@ -37,11 +37,11 @@ public class FuncDefExp extends Exp {
     }
 
     public boolean isVararg() {
-        return IsVararg;
+        return isVararg;
     }
 
     public void setVararg(boolean vararg) {
-        IsVararg = vararg;
+        isVararg = vararg;
     }
 
     public Block getBlock() {

@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.exps;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 
 /**
  * 整数表达式
@@ -8,7 +8,7 @@ import com.ywh.jua.compiler.ast.Exp;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class IntegerExp extends Exp {
+public class IntegerExp extends BaseExp {
 
     private long val;
 

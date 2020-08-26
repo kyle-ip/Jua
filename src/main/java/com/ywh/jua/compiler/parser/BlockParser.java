@@ -2,8 +2,8 @@ package com.ywh.jua.compiler.parser;
 
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 import com.ywh.jua.compiler.ast.stats.EmptyStat;
 import com.ywh.jua.compiler.lexer.Lexer;
 import com.ywh.jua.compiler.lexer.TokenKind;
@@ -53,12 +53,12 @@ class BlockParser {
      * @param lexer
      * @return
      */
-    private static List<Stat> parseStats(Lexer lexer) {
-        List<Stat> stats = new ArrayList<>();
+    private static List<BaseStat> parseStats(Lexer lexer) {
+        List<BaseStat> stats = new ArrayList<>();
 
         // 逐个 token 取出解析，直到块结束
         while (!isReturnOrBlockEnd(lexer.LookAhead())) {
-            Stat stat = parseStat(lexer);
+            BaseStat stat = parseStat(lexer);
             if (!(stat instanceof EmptyStat)) {
                 stats.add(stat);
             }
@@ -96,7 +96,7 @@ class BlockParser {
      * @param lexer
      * @return
      */
-    private static List<Exp> parseRetExps(Lexer lexer) {
+    private static List<BaseExp> parseRetExps(Lexer lexer) {
 
         // 前瞻下一个 token，如果不是 return 则表示没有返回语句，直接返回 null。
         if (lexer.LookAhead() != TokenKind.TOKEN_KW_RETURN) {
@@ -119,7 +119,7 @@ class BlockParser {
                 return Collections.emptyList();
             // 块未结束，解析表达式列表。
             default:
-                List<Exp> exps = parseExpList(lexer);
+                List<BaseExp> exps = parseExpList(lexer);
                 // 跳过分号。
                 if (lexer.LookAhead() == TokenKind.TOKEN_SEP_SEMI) {
                     lexer.nextToken();

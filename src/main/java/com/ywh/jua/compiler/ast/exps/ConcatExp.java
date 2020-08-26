@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.exps;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 
 import java.util.List;
 
@@ -10,23 +10,23 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class ConcatExp extends Exp {
+public class ConcatExp extends BaseExp {
 
     /**
      * 拼接内容列表
      */
-    private List<Exp> exps;
+    private List<BaseExp> exps;
 
-    public ConcatExp(int line, List<Exp> exps) {
+    public ConcatExp(int line, List<BaseExp> exps) {
         setLine(line);
         this.exps = exps;
     }
 
-    public List<Exp> getExps() {
+    public List<BaseExp> getExps() {
         return exps;
     }
 
-    public void setExps(List<Exp> exps) {
+    public void setExps(List<BaseExp> exps) {
         this.exps = exps;
     }
 }

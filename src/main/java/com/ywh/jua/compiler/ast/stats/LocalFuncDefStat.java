@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.stats;
 
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseStat;
 import com.ywh.jua.compiler.ast.exps.FuncDefExp;
 
 /**
@@ -13,7 +13,7 @@ import com.ywh.jua.compiler.ast.exps.FuncDefExp;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class LocalFuncDefStat extends Stat {
+public class LocalFuncDefStat extends BaseStat {
 
     /**
      * 函数名

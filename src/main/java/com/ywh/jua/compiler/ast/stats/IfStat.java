@@ -2,8 +2,8 @@ package com.ywh.jua.compiler.ast.stats;
 
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 import java.util.List;
 
@@ -16,28 +16,28 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class IfStat extends Stat {
+public class IfStat extends BaseStat {
 
     /**
      * 表达式列表
      */
-    private List<Exp> exps;
+    private List<BaseExp> exps;
 
     /**
      * 与表达式列表对应的块列表
      */
     private List<Block> blocks;
 
-    public IfStat(List<Exp> exps, List<Block> blocks) {
+    public IfStat(List<BaseExp> exps, List<Block> blocks) {
         this.exps = exps;
         this.blocks = blocks;
     }
 
-    public List<Exp> getExps() {
+    public List<BaseExp> getExps() {
         return exps;
     }
 
-    public void setExps(List<Exp> exps) {
+    public void setExps(List<BaseExp> exps) {
         this.exps = exps;
     }
 

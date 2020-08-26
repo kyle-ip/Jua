@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.codegen;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.ast.exps.*;
 
 import java.util.List;
@@ -16,11 +16,11 @@ class ExpHelper {
      * @param exp
      * @return
      */
-    static boolean isVarargOrFuncCall(Exp exp) {
+    static boolean isVarargOrFuncCall(BaseExp exp) {
         return exp instanceof VarargExp || exp instanceof FuncCallExp;
     }
 
-    static List<Exp> removeTailNils(List<Exp> exps) {
+    static List<BaseExp> removeTailNils(List<BaseExp> exps) {
         while (!exps.isEmpty()) {
             if (exps.get(exps.size() - 1) instanceof NilExp) {
                 exps.remove(exps.size() - 1);
@@ -31,7 +31,7 @@ class ExpHelper {
         return exps;
     }
 
-    static int lineOf(Exp exp) {
+    static int lineOf(BaseExp exp) {
         if (exp instanceof TableAccessExp) {
             return lineOf(((TableAccessExp) exp).getPrefixExp());
         }
@@ -44,7 +44,7 @@ class ExpHelper {
         return exp.getLine();
     }
 
-    static int lastLineOf(Exp exp) {
+    static int lastLineOf(BaseExp exp) {
         if (exp instanceof TableAccessExp) {
             return lastLineOf(((TableAccessExp) exp).getPrefixExp());
         }

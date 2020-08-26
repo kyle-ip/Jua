@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.parser;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.ast.exps.*;
 import com.ywh.jua.compiler.lexer.Lexer;
 import com.ywh.jua.compiler.lexer.Token;
@@ -32,11 +32,12 @@ class PrefixExpParser {
      * @param lexer
      * @return
      */
-    static Exp parsePrefixExp(Lexer lexer) {
-        Exp exp;
+    static BaseExp parsePrefixExp(Lexer lexer) {
+        BaseExp exp;
         // 先前瞻一个 token，根据情况解析出标识符或圆括号表达式。
         if (lexer.LookAhead() == TOKEN_IDENTIFIER) {
-            Token id = lexer.nextIdentifier(); // Name
+            // Name
+            Token id = lexer.nextIdentifier();
             exp = new NameExp(id.getLine(), id.getValue());
         } else { // ‘(’ exp ‘)’
             exp = parseParensExp(lexer);
@@ -51,11 +52,11 @@ class PrefixExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseParensExp(Lexer lexer) {
+    private static BaseExp parseParensExp(Lexer lexer) {
         // (
         lexer.nextTokenOfKind(TOKEN_SEP_LPAREN);
         // exp
-        Exp exp = parseExp(lexer);
+        BaseExp exp = parseExp(lexer);
         // )
         lexer.nextTokenOfKind(TOKEN_SEP_RPAREN);
 
@@ -73,14 +74,15 @@ class PrefixExpParser {
      * @param exp
      * @return
      */
-    private static Exp finishPrefixExp(Lexer lexer, Exp exp) {
+    private static BaseExp finishPrefixExp(Lexer lexer, BaseExp exp) {
         while (true) {
             switch (lexer.LookAhead()) {
-                case TOKEN_SEP_LBRACK: { // prefixexp ‘[’ exp ‘]’
+                // prefixexp ‘[’ exp ‘]’
+                case TOKEN_SEP_LBRACK: {
                     // ‘[’
                     lexer.nextToken();
                     // exp
-                    Exp keyExp = parseExp(lexer);
+                    BaseExp keyExp = parseExp(lexer);
                     // ‘]’
                     lexer.nextTokenOfKind(TOKEN_SEP_RBRACK);
                     exp = new TableAccessExp(lexer.line(), exp, keyExp);
@@ -92,7 +94,7 @@ class PrefixExpParser {
                     lexer.nextToken();
                     // Name
                     Token name = lexer.nextIdentifier();
-                    Exp keyExp = new StringExp(name);
+                    BaseExp keyExp = new StringExp(name);
                     exp = new TableAccessExp(name.getLine(), exp, keyExp);
                     break;
                 }
@@ -119,7 +121,7 @@ class PrefixExpParser {
      * @param prefixExp
      * @return
      */
-    private static FuncCallExp finishFuncCallExp(Lexer lexer, Exp prefixExp) {
+    private static FuncCallExp finishFuncCallExp(Lexer lexer, BaseExp prefixExp) {
         FuncCallExp fcExp = new FuncCallExp();
         fcExp.setPrefixExp(prefixExp);
         fcExp.setNameExp(parseNameExp(lexer));
@@ -154,13 +156,13 @@ class PrefixExpParser {
      * @param lexer
      * @return
      */
-    private static List<Exp> parseArgs(Lexer lexer) {
+    private static List<BaseExp> parseArgs(Lexer lexer) {
         switch (lexer.LookAhead()) {
             // ‘(’ [explist] ‘)’
             case TOKEN_SEP_LPAREN:
                 // TOKEN_SEP_LPAREN
                 lexer.nextToken();
-                List<Exp> args = null;
+                List<BaseExp> args = null;
                 if (lexer.LookAhead() != TOKEN_SEP_RPAREN) {
                     args = parseExpList(lexer);
                 }

@@ -8,7 +8,7 @@ import com.ywh.jua.vm.OpCode;
 import java.util.*;
 
 import static com.ywh.jua.compiler.lexer.TokenKind.*;
-import static com.ywh.jua.vm.Instruction.MAXARG_sBx;
+import static com.ywh.jua.vm.Instruction.MAXARG_S_BX;
 
 /**
  * 函数内部结构
@@ -185,6 +185,11 @@ class FuncInfo {
 
     /* constants */
 
+    /**
+     *
+     * @param k
+     * @return
+     */
     int indexOfConstant(Object k) {
         Integer idx = constants.get(k);
         if (idx != null) {
@@ -289,7 +294,7 @@ class FuncInfo {
             int a = getJmpArgA();
             for (int pc : pendingBreakJmps) {
                 int sBx = pc() - pc;
-                int i = (sBx + MAXARG_sBx) << 14 | a << 6 | OpCode.JMP.ordinal();
+                int i = (sBx + MAXARG_S_BX) << 14 | a << 6 | OpCode.JMP.ordinal();
                 insts.set(pc, i);
             }
         }
@@ -466,12 +471,19 @@ class FuncInfo {
      */
     void fixSbx(int pc, int sBx) {
         int i = insts.get(pc);
-        i = i << 18 >> 18;                  // clear sBx
-        i = i | (sBx + MAXARG_sBx) << 14; // reset sBx
+        // clear sBx
+        i = i << 18 >> 18;
+        // reset sBx
+        i = i | (sBx + MAXARG_S_BX) << 14;
         insts.set(pc, i);
     }
 
-    // TODO: rename?
+    /**
+     * TODO: rename?
+     *
+     * @param name
+     * @param delta
+     */
     void fixEndPC(String name, int delta) {
         for (int i = locVars.size() - 1; i >= 0; i--) {
             LocVarInfo locVar = locVars.get(i);
@@ -521,7 +533,7 @@ class FuncInfo {
      * @param sBx
      */
     private void emitAsBx(int line, OpCode opcode, int a, int sBx) {
-        int i = (sBx + MAXARG_sBx) << 14 | a << 6 | opcode.ordinal();
+        int i = (sBx + MAXARG_S_BX) << 14 | a << 6 | opcode.ordinal();
         insts.add(i);
         lineNums.add(line);
     }
@@ -637,42 +649,95 @@ class FuncInfo {
         emitABC(line, OpCode.SETLIST, a, b, c);
     }
 
-    // r[a] = r[b][rk(c)]
+    /**
+     * r[a] = r[b][rk(c)]
+     *
+     * @param line
+     * @param a
+     * @param b
+     * @param c
+     */
     void emitGetTable(int line, int a, int b, int c) {
         emitABC(line, OpCode.GETTABLE, a, b, c);
     }
 
-    // r[a][rk(b)] = rk(c)
+    /**
+     * r[a][rk(b)] = rk(c)
+     *
+     * @param line
+     * @param a
+     * @param b
+     * @param c
+     */
     void emitSetTable(int line, int a, int b, int c) {
         emitABC(line, OpCode.SETTABLE, a, b, c);
     }
 
-    // r[a] = upval[b]
+    /**
+     * r[a] = upval[b]
+     *
+     * @param line
+     * @param a
+     * @param b
+     */
     void emitGetUpval(int line, int a, int b) {
         emitABC(line, OpCode.GETUPVAL, a, b, 0);
     }
 
-    // upval[b] = r[a]
+    /**
+     * upval[b] = r[a]
+     *
+     * @param line
+     * @param a
+     * @param b
+     */
     void emitSetUpval(int line, int a, int b) {
         emitABC(line, OpCode.SETUPVAL, a, b, 0);
     }
 
-    // r[a] = upval[b][rk(c)]
+    /**
+     * r[a] = upval[b][rk(c)]
+     *
+     * @param line
+     * @param a
+     * @param b
+     * @param c
+     */
     void emitGetTabUp(int line, int a, int b, int c) {
         emitABC(line, OpCode.GETTABUP, a, b, c);
     }
 
-    // upval[a][rk(b)] = rk(c)
+    /**
+     * upval[a][rk(b)] = rk(c)
+     *
+     * @param line
+     * @param a
+     * @param b
+     * @param c
+     */
     void emitSetTabUp(int line, int a, int b, int c) {
         emitABC(line, OpCode.SETTABUP, a, b, c);
     }
 
-    // r[a], ..., r[a+c-2] = r[a](r[a+1], ..., r[a+b-1])
+    /**
+     * r[a], ..., r[a+c-2] = r[a](r[a+1], ..., r[a+b-1])
+     *
+     * @param line
+     * @param a
+     * @param nArgs
+     * @param nRet
+     */
     void emitCall(int line, int a, int nArgs, int nRet) {
         emitABC(line, OpCode.CALL, a, nArgs + 1, nRet + 1);
     }
 
-    // return r[a](r[a+1], ... ,r[a+b-1])
+    /**
+     * return r[a](r[a+1], ... ,r[a+b-1])
+     *
+     * @param line
+     * @param a
+     * @param nArgs
+     */
     void emitTailCall(int line, int a, int nArgs) {
         emitABC(line, OpCode.TAILCALL, a, nArgs + 1, 0);
     }

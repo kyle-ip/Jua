@@ -24,6 +24,6 @@ stat ::=  ‘;’ |
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public abstract class Stat extends Node {
+public abstract class BaseStat extends BaseNode {
 
 }

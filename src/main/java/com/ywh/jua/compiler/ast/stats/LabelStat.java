@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.stats;
 
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 /**
  * label 语句
@@ -9,7 +9,7 @@ import com.ywh.jua.compiler.ast.Stat;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class LabelStat extends Stat {
+public class LabelStat extends BaseStat {
 
     /**
      * 标签名

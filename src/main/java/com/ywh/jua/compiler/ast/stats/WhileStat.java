@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.ast.stats;
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 /**
  * while 语句
@@ -12,28 +12,28 @@ import com.ywh.jua.compiler.ast.Stat;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class WhileStat extends Stat {
+public class WhileStat extends BaseStat {
 
     /**
      * 条件表达式
      */
-    private Exp exp;
+    private BaseExp exp;
 
     /**
      * 代码块
      */
     private Block block;
 
-    public WhileStat(Exp exp, Block block) {
+    public WhileStat(BaseExp exp, Block block) {
         this.exp = exp;
         this.block = block;
     }
 
-    public Exp getExp() {
+    public BaseExp getExp() {
         return exp;
     }
 
-    public void setExp(Exp exp) {
+    public void setExp(BaseExp exp) {
         this.exp = exp;
     }
 

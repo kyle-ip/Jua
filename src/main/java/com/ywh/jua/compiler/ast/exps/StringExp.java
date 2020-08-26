@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.exps;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.lexer.Token;
 
 /**
@@ -9,7 +9,7 @@ import com.ywh.jua.compiler.lexer.Token;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class StringExp extends Exp {
+public class StringExp extends BaseExp {
 
     private String str;
 

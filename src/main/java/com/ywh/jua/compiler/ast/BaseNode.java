@@ -6,7 +6,7 @@ package com.ywh.jua.compiler.ast;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public abstract class Node {
+public abstract class BaseNode {
 
     /**
      * 当前行号

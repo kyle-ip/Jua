@@ -1,7 +1,9 @@
 package com.ywh.jua.compiler.lexer;
 
 import java.util.regex.Pattern;
+
 import static com.ywh.jua.compiler.lexer.TokenKind.*;
+import static com.ywh.jua.constant.TokenConstant.*;
 
 
 /**
@@ -18,9 +20,11 @@ public class Lexer {
 
     private static final Pattern RE_IDENTIFIER = Pattern.compile("^[_\\d\\w]+");
 
-    private static final Pattern RE_NUMBER = Pattern.compile("^0[xX][0-9a-fA-F]*(\\.[0-9a-fA-F]*)?([pP][+\\-]?[0-9]+)?|^[0-9]*(\\.[0-9]*)?([eE][+\\-]?[0-9]+)?");
+    private static final Pattern RE_NUMBER = Pattern.compile("^0[xX][0-9a-fA-F]*(\\.[0-9a-fA-F]*)?([pP][+\\-]?[0-9]+)" +
+        "?|^[0-9]*(\\.[0-9]*)?([eE][+\\-]?[0-9]+)?");
 
-    private static final Pattern RE_SHORT_STR = Pattern.compile("(?s)(^'(\\\\\\\\|\\\\'|\\\\\\n|\\\\z\\s*|[^'\\n])*')|(^\"(\\\\\\\\|\\\\\"|\\\\\\n|\\\\z\\s*|[^\"\\n])*\")");
+    private static final Pattern RE_SHORT_STR = Pattern.compile("(?s)(^'(\\\\\\\\|\\\\'|\\\\\\n|\\\\z\\s*|[^'\\n])*')" +
+        "|(^\"(\\\\\\\\|\\\\\"|\\\\\\n|\\\\z\\s*|[^\"\\n])*\")");
 
     private static final Pattern RE_OPENING_LONG_BRACKET = Pattern.compile("^\\[=*\\[");
 
@@ -47,7 +51,7 @@ public class Lexer {
     /**
      * 备份行号
      */
-	private int lineBackup;
+    private int lineBackup;
 
     public Lexer(String chunk, String chunkName) {
         this.chunk = new CharSeq(chunk);
@@ -61,7 +65,7 @@ public class Lexer {
      * @return
      */
     public int line() {
-    	return cachedNextToken != null ? lineBackup : line;
+        return cachedNextToken != null ? lineBackup : line;
     }
 
     <T> T error(String fmt, Object... args) {
@@ -124,120 +128,120 @@ public class Lexer {
         switch (chunk.charAt(0)) {
             case ';':
                 chunk.next(1);
-                return new Token(line, TOKEN_SEP_SEMI,   ";");
+                return new Token(line, TOKEN_SEP_SEMI, SEMI);
             case ',':
                 chunk.next(1);
-                return new Token(line, TOKEN_SEP_COMMA,  ",");
+                return new Token(line, TOKEN_SEP_COMMA, COMMA);
             case '(':
                 chunk.next(1);
-                return new Token(line, TOKEN_SEP_LPAREN, "(");
+                return new Token(line, TOKEN_SEP_LPAREN, LPAREN);
             case ')':
                 chunk.next(1);
-                return new Token(line, TOKEN_SEP_RPAREN, ")");
+                return new Token(line, TOKEN_SEP_RPAREN, RPAREN);
             case ']':
                 chunk.next(1);
-                return new Token(line, TOKEN_SEP_RBRACK, "]");
+                return new Token(line, TOKEN_SEP_RBRACK, RBRACK);
             case '{':
                 chunk.next(1);
-                return new Token(line, TOKEN_SEP_LCURLY, "{");
+                return new Token(line, TOKEN_SEP_LCURLY, LCURLY);
             case '}':
                 chunk.next(1);
-                return new Token(line, TOKEN_SEP_RCURLY, "}");
+                return new Token(line, TOKEN_SEP_RCURLY, RCURLY);
             case '+':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_ADD,     "+");
+                return new Token(line, TOKEN_OP_ADD, ADD);
             case '-':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_MINUS,   "-");
+                return new Token(line, TOKEN_OP_MINUS, MINUS);
             case '*':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_MUL,     "*");
+                return new Token(line, TOKEN_OP_MUL, MUL);
             case '^':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_POW,     "^");
+                return new Token(line, TOKEN_OP_POW, POW);
             case '%':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_MOD,     "%");
+                return new Token(line, TOKEN_OP_MOD, MOD);
             case '&':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_BAND,    "&");
+                return new Token(line, TOKEN_OP_BAND, BAND);
             case '|':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_BOR,     "|");
+                return new Token(line, TOKEN_OP_BOR, BOR);
             case '#':
                 chunk.next(1);
-                return new Token(line, TOKEN_OP_LEN,     "#");
+                return new Token(line, TOKEN_OP_LEN, LEN);
             case ':':
-                if (chunk.startsWith("::")) {
+                if (chunk.startsWith(LABEL)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_SEP_LABEL, "::");
+                    return new Token(line, TOKEN_SEP_LABEL, LABEL);
                 } else {
                     chunk.next(1);
-                    return new Token(line, TOKEN_SEP_COLON, ":");
+                    return new Token(line, TOKEN_SEP_COLON, COLON);
                 }
             case '/':
-                if (chunk.startsWith("//")) {
+                if (chunk.startsWith(IDIV)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_IDIV, "//");
+                    return new Token(line, TOKEN_OP_IDIV, IDIV);
                 } else {
                     chunk.next(1);
-                    return new Token(line, TOKEN_OP_DIV, "/");
+                    return new Token(line, TOKEN_OP_DIV, DIV);
                 }
             case '~':
-                if (chunk.startsWith("~=")) {
+                if (chunk.startsWith(NE)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_NE, "~=");
+                    return new Token(line, TOKEN_OP_NE, NE);
                 } else {
                     chunk.next(1);
-                    return new Token(line, TOKEN_OP_WAVE, "~");
+                    return new Token(line, TOKEN_OP_WAVE, WAVE);
                 }
             case '=':
-                if (chunk.startsWith("==")) {
+                if (chunk.startsWith(EQ)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_EQ, "==");
+                    return new Token(line, TOKEN_OP_EQ, EQ);
                 } else {
                     chunk.next(1);
-                    return new Token(line, TOKEN_OP_ASSIGN, "=");
+                    return new Token(line, TOKEN_OP_ASSIGN, ASSIGN);
                 }
             case '<':
-                if (chunk.startsWith("<<")) {
+                if (chunk.startsWith(SHL)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_SHL, "<<");
-                } else if (chunk.startsWith("<=")) {
+                    return new Token(line, TOKEN_OP_SHL, SHL);
+                } else if (chunk.startsWith(LE)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_LE, "<=");
+                    return new Token(line, TOKEN_OP_LE, LE);
                 } else {
                     chunk.next(1);
-                    return new Token(line, TOKEN_OP_LT, "<");
+                    return new Token(line, TOKEN_OP_LT, LT);
                 }
             case '>':
-                if (chunk.startsWith(">>")) {
+                if (chunk.startsWith(SHR)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_SHR, ">>");
-                } else if (chunk.startsWith(">=")) {
+                    return new Token(line, TOKEN_OP_SHR, SHR);
+                } else if (chunk.startsWith(GE)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_GE, ">=");
+                    return new Token(line, TOKEN_OP_GE, GE);
                 } else {
                     chunk.next(1);
-                    return new Token(line, TOKEN_OP_GT, ">");
+                    return new Token(line, TOKEN_OP_GT, GT);
                 }
             case '.':
-                if (chunk.startsWith("...")) {
+                if (chunk.startsWith(VARARG)) {
                     chunk.next(3);
-                    return new Token(line, TOKEN_VARARG, "...");
-                } else if (chunk.startsWith("..")) {
+                    return new Token(line, TOKEN_VARARG, VARARG);
+                } else if (chunk.startsWith(CONCAT)) {
                     chunk.next(2);
-                    return new Token(line, TOKEN_OP_CONCAT, "..");
+                    return new Token(line, TOKEN_OP_CONCAT, CONCAT);
                 } else if (chunk.length() == 1 || !CharUtil.isDigit(chunk.charAt(1))) {
                     chunk.next(1);
-                    return new Token(line, TOKEN_SEP_DOT, ".");
+                    return new Token(line, TOKEN_SEP_DOT, DOT);
                 }
             case '[':
                 if (chunk.startsWith("[[") || chunk.startsWith("[=")) {
                     return new Token(line, TOKEN_STRING, scanLongString());
                 } else {
                     chunk.next(1);
-                    return new Token(line, TOKEN_SEP_LBRACK, "[");
+                    return new Token(line, TOKEN_SEP_LBRACK, LBRACK);
                 }
             case '\'':
             case '"':
@@ -259,7 +263,8 @@ public class Lexer {
             String id = scanIdentifier();
             // 如果匹配到标识符，则取该标识符；否则取 TOKEN_IDENTIFIER。
             return new Token(line, Token.KEYWORDS.getOrDefault(id, TOKEN_IDENTIFIER), id);
-            // return Token.KEYWORDS.containsKey(id) ? new Token(line, Token.KEYWORDS.get(id), id): new Token(line, TOKEN_IDENTIFIER, id);
+            // return Token.KEYWORDS.containsKey(id) ? new Token(line, Token.KEYWORDS.get(id), id): new Token(line,
+            // TOKEN_IDENTIFIER, id);
 
         }
         return error("unexpected symbol near %c", c);
@@ -286,7 +291,7 @@ public class Lexer {
                 line += 1;
             }
             // 跳过空白字符
-            else if(CharUtil.isWhiteSpace(chunk.charAt(0))) {
+            else if (CharUtil.isWhiteSpace(chunk.charAt(0))) {
                 chunk.next(1);
             } else {
                 break;
@@ -302,7 +307,7 @@ public class Lexer {
         chunk.next(2);
 
         // 长注释，跳过一个长字符串。
-        if (chunk.startsWith("[")) {
+        if (chunk.startsWith(LBRACK)) {
             if (chunk.find(RE_OPENING_LONG_BRACKET) != null) {
                 scanLongString();
                 return;
@@ -310,13 +315,12 @@ public class Lexer {
         }
 
         // 短注释，跳过换行符前所有字符。
-        while(chunk.length() > 0 && !CharUtil.isNewLine(chunk.charAt(0))) {
+        while (chunk.length() > 0 && !CharUtil.isNewLine(chunk.charAt(0))) {
             chunk.next(1);
         }
     }
 
     /**
-     *
      * @return
      */
     private String scanIdentifier() {
@@ -333,7 +337,6 @@ public class Lexer {
     }
 
     /**
-     *
      * @param pattern
      * @return
      */
@@ -349,15 +352,14 @@ public class Lexer {
     /**
      * 截取长字符串
      * Lua 中支持多种方式表示长字符串：
-     *      a = 'alo\n123"'
-     *      a = "alo\n123\""
-     *      '97lo\10\04923"'
-     *      a = [[alo
-     *      123"]]
-     *      a = [==[
-     *      alo
-     *      123"]==]
-     *
+     * a = 'alo\n123"'
+     * a = "alo\n123\""
+     * '97lo\10\04923"'
+     * a = [[alo
+     * 123"]]
+     * a = [==[
+     * alo
+     * 123"]==]
      *
      * @return
      */
@@ -369,7 +371,7 @@ public class Lexer {
         }
 
         // 截取字符串字面量，把左右长方括号去除，在 chunk 中跳过这个字符串。
-        String closingLongBracket = openingLongBracket.replace("[", "]");
+        String closingLongBracket = openingLongBracket.replace(LBRACK, RBRACK);
         int closingLongBracketIdx = chunk.indexOf(closingLongBracket);
         if (closingLongBracketIdx < 0) {
             return error("unfinished long string or comment");
@@ -378,11 +380,11 @@ public class Lexer {
         chunk.next(closingLongBracketIdx + closingLongBracket.length());
 
         // 把换行符序列统一转换成 \n
-        str = RE_NEW_LINE.matcher(str).replaceAll("\n");
+        str = RE_NEW_LINE.matcher(str).replaceAll(LF);
         line += str.chars().filter(c -> c == '\n').count();
 
         // 把第一个换行符去除
-        if (str.startsWith("\n")) {
+        if (str.startsWith(LF)) {
             str = str.substring(1);
         }
         return str;

@@ -30,7 +30,9 @@ The purpose of building this project is to learn:
     - [ ] package
     - [ ] coroutine
     - [ ] debug
-- [ ] Metaprogramming
+- [x] Metaprogramming
+
+<!--
 
 ### Instruction Set (completed)
 
@@ -87,6 +89,7 @@ The purpose of building this project is to learn:
 ### Standard Library
 
 ...
+-->
 
 ## Usage
 

@@ -71,10 +71,10 @@ public class BinaryChunk {
      * @return
      */
     public static boolean isBinaryChunk(byte[] data) {
-        if (data == null || data.length < 4) {
+        if (data == null || data.length < LUA_SIGNATURE.length) {
             return false;
         }
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < LUA_SIGNATURE.length; i++) {
             if (data[i] != LUA_SIGNATURE[i]) {
                 return false;
             }
@@ -107,7 +107,7 @@ public class BinaryChunk {
     private static void checkHead(ByteBuffer buf) {
 
         // 签名
-        if (!Arrays.equals(LUA_SIGNATURE, getBytes(buf, 4))) {
+        if (!Arrays.equals(LUA_SIGNATURE, getBytes(buf, LUA_SIGNATURE.length))) {
             throw new RuntimeException("not a precompiled chunk!");
         }
 
@@ -122,7 +122,7 @@ public class BinaryChunk {
         }
 
         // LUAC_DATA
-        if (!Arrays.equals(LUAC_DATA, getBytes(buf, 6))) {
+        if (!Arrays.equals(LUAC_DATA, getBytes(buf, LUAC_DATA.length))) {
             throw new RuntimeException("corrupted!");
         }
 

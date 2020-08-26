@@ -323,8 +323,8 @@ public class Instructions {
         int c = Instruction.getC(i);
 
         // 左操作数、右操作数运算后推入栈顶，并替换到 A
-        vm.getRK(b);
-        vm.getRK(c);
+        vm.getRk(b);
+        vm.getRk(c);
         vm.arith(op);
         vm.replace(a);
     }
@@ -414,8 +414,8 @@ public class Instructions {
         int a = Instruction.getA(i);
         int b = Instruction.getB(i);
         int c = Instruction.getC(i);
-        vm.getRK(b);
-        vm.getRK(c);
+        vm.getRk(b);
+        vm.getRk(c);
         if (vm.compare(-2, -1, op) == (a == 0)) {
             vm.addPC(1);
         }
@@ -689,7 +689,7 @@ public class Instructions {
         // 键索引（寄存器或常量表中）
         int c = Instruction.getC(i);
 
-        vm.getRK(c);
+        vm.getRk(c);
         vm.getTable(b);
         vm.replace(a);
     }
@@ -710,8 +710,8 @@ public class Instructions {
         // 键和值可能存在于寄存器或常量表中，索引由操作数 B、C 指定。
         int b = Instruction.getB(i);
         int c = Instruction.getC(i);
-        vm.getRK(b);
-        vm.getRK(c);
+        vm.getRk(b);
+        vm.getRk(c);
         vm.setTable(a);
     }
 
@@ -796,7 +796,7 @@ public class Instructions {
         vm.copy(b, a + 1);
 
         // 把方法名置于栈顶。
-        vm.getRK(c);
+        vm.getRk(c);
 
         // 对象以方法名为键取值，置于栈顶，并替换到目标寄存器。
         vm.getTable(b);
@@ -1041,7 +1041,7 @@ public class Instructions {
 
         // 键索引（需要放入栈顶）
         int c = Instruction.getC(i);
-        vm.getRK(c);
+        vm.getRk(c);
         vm.getTable(luaUpvalueIndex(b));
         vm.replace(a);
     }
@@ -1060,8 +1060,8 @@ public class Instructions {
         int a = Instruction.getA(i) + 1;
         int b = Instruction.getB(i);
         int c = Instruction.getC(i);
-        vm.getRK(b);
-        vm.getRK(c);
+        vm.getRk(b);
+        vm.getRk(c);
         vm.setTable(luaUpvalueIndex(a));
     }
 

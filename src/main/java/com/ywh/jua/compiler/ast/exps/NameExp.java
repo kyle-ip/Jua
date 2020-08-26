@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.exps;
 
-import com.ywh.jua.compiler.ast.PrefixExp;
+import com.ywh.jua.compiler.ast.BasePrefixExp;
 
 /**
  * 名称表达式
@@ -9,7 +9,7 @@ import com.ywh.jua.compiler.ast.PrefixExp;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class NameExp extends PrefixExp {
+public class NameExp extends BasePrefixExp {
 
     private String name;
 

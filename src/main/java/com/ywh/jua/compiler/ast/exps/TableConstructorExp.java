@@ -1,7 +1,7 @@
 package com.ywh.jua.compiler.ast.exps;
 
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 
 import java.util.List;
 
@@ -11,39 +11,39 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class TableConstructorExp extends Exp {
+public class TableConstructorExp extends BaseExp {
 
     /**
      * 键列表
      */
-    private List<Exp> keyExps;
+    private List<BaseExp> keyExps;
 
     /**
      * 值列表
      */
-    private List<Exp> valExps;
+    private List<BaseExp> valExps;
 
-    public List<Exp> getKeyExps() {
+    public List<BaseExp> getKeyExps() {
         return keyExps;
     }
 
-    public void setKeyExps(List<Exp> keyExps) {
+    public void setKeyExps(List<BaseExp> keyExps) {
         this.keyExps = keyExps;
     }
 
-    public List<Exp> getValExps() {
+    public List<BaseExp> getValExps() {
         return valExps;
     }
 
-    public void setValExps(List<Exp> valExps) {
+    public void setValExps(List<BaseExp> valExps) {
         this.valExps = valExps;
     }
 
-    public void addKey(Exp key) {
+    public void addKey(BaseExp key) {
         keyExps.add(key);
     }
 
-    public void addVal(Exp val) {
+    public void addVal(BaseExp val) {
         valExps.add(val);
     }
 

@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.codegen;
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 import com.ywh.jua.compiler.ast.exps.NameExp;
 import com.ywh.jua.compiler.ast.exps.TableAccessExp;
 import com.ywh.jua.compiler.ast.stats.*;
@@ -27,7 +27,7 @@ class StatProcessor {
      * @param fi
      * @param node
      */
-    static void processStat(FuncInfo fi, Stat node) {
+    static void processStat(FuncInfo fi, BaseStat node) {
         if (node instanceof FuncCallStat) {
             processFuncCallStat(fi, (FuncCallStat) node);
         } else if (node instanceof BreakStat) {
@@ -192,7 +192,7 @@ class StatProcessor {
         int pcJmpToNextExp = -1;
 
         for (int i = 0; i < node.getExps().size(); i++) {
-            Exp exp = node.getExps().get(i);
+            BaseExp exp = node.getExps().get(i);
             if (pcJmpToNextExp >= 0) {
                 fi.fixSbx(pcJmpToNextExp, fi.pc() - pcJmpToNextExp);
             }
@@ -301,19 +301,19 @@ class StatProcessor {
      * @param node
      */
     private static void processLocalVarDeclStat(FuncInfo fi, LocalVarDeclStat node) {
-        List<Exp> exps = ExpHelper.removeTailNils(node.getExpList());
+        List<BaseExp> exps = ExpHelper.removeTailNils(node.getExpList());
         int nExps = exps.size();
         int nNames = node.getNameList().size();
 
         int oldRegs = fi.usedRegs;
         if (nExps == nNames) {
-            for (Exp exp : exps) {
+            for (BaseExp exp : exps) {
                 int a = fi.allocReg();
                 processExp(fi, exp, a, 1);
             }
         } else if (nExps > nNames) {
             for (int i = 0; i < exps.size(); i++) {
-                Exp exp = exps.get(i);
+                BaseExp exp = exps.get(i);
                 int a = fi.allocReg();
                 if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     processExp(fi, exp, a, 0);
@@ -324,7 +324,7 @@ class StatProcessor {
         } else { // nNames > nExps
             boolean multRet = false;
             for (int i = 0; i < exps.size(); i++) {
-                Exp exp = exps.get(i);
+                BaseExp exp = exps.get(i);
                 int a = fi.allocReg();
                 if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     multRet = true;
@@ -356,7 +356,7 @@ class StatProcessor {
      * @param node
      */
     private static void processAssignStat(FuncInfo fi, AssignStat node) {
-        List<Exp> exps = ExpHelper.removeTailNils(node.getExpList());
+        List<BaseExp> exps = ExpHelper.removeTailNils(node.getExpList());
         int nExps = exps.size();
         int nVars = node.getVarList().size();
 
@@ -366,7 +366,7 @@ class StatProcessor {
         int oldRegs = fi.usedRegs;
 
         for (int i = 0; i < node.getVarList().size(); i++) {
-            Exp exp = node.getVarList().get(i);
+            BaseExp exp = node.getVarList().get(i);
             if (exp instanceof TableAccessExp) {
                 TableAccessExp taExp = (TableAccessExp) exp;
                 tRegs[i] = fi.allocReg();
@@ -390,7 +390,7 @@ class StatProcessor {
 
         if (nExps >= nVars) {
             for (int i = 0; i < exps.size(); i++) {
-                Exp exp = exps.get(i);
+                BaseExp exp = exps.get(i);
                 int a = fi.allocReg();
                 if (i >= nVars && i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     processExp(fi, exp, a, 0);
@@ -401,7 +401,7 @@ class StatProcessor {
         } else { // nVars > nExps
             boolean multRet = false;
             for (int i = 0; i < exps.size(); i++) {
-                Exp exp = exps.get(i);
+                BaseExp exp = exps.get(i);
                 int a = fi.allocReg();
                 if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     multRet = true;
@@ -421,7 +421,7 @@ class StatProcessor {
 
         int lastLine = node.getLastLine();
         for (int i = 0; i < node.getVarList().size(); i++) {
-            Exp exp = node.getVarList().get(i);
+            BaseExp exp = node.getVarList().get(i);
             if (!(exp instanceof NameExp)) {
                 fi.emitSetTable(lastLine, tRegs[i], kRegs[i], vRegs[i]);
                 continue;

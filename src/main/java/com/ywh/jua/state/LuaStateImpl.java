@@ -2,27 +2,26 @@ package com.ywh.jua.state;
 
 
 import com.ywh.jua.api.*;
-import com.ywh.jua.chunk.BinaryChunk;
 import com.ywh.jua.chunk.Prototype;
 import com.ywh.jua.chunk.Upvalue;
+import com.ywh.jua.number.LuaNumber;
+import com.ywh.jua.stdlib.BasicLib;
 import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 import static com.ywh.jua.api.ArithOp.LUA_OPBNOT;
 import static com.ywh.jua.api.ArithOp.LUA_OPUNM;
 import static com.ywh.jua.api.LuaType.*;
-import static com.ywh.jua.api.ThreadStatus.LUA_ERRRUN;
-import static com.ywh.jua.api.ThreadStatus.LUA_OK;
+import static com.ywh.jua.api.ThreadStatus.*;
 import static com.ywh.jua.chunk.BinaryChunk.isBinaryChunk;
 import static com.ywh.jua.chunk.BinaryChunk.undump;
 import static com.ywh.jua.compiler.Compiler.compile;
-
-import com.ywh.jua.compiler.Compiler;
+import static com.ywh.jua.constant.MetaConstant.*;
 
 /**
  * Lua State 实现
@@ -265,53 +264,103 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
     // ========== 判断指定索引位置的值的类型 ==========
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isNone(int idx) {
         return type(idx) == LUA_TNONE;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isNil(int idx) {
         return type(idx) == LUA_TNIL;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isNoneOrNil(int idx) {
         LuaType t = type(idx);
         return t == LUA_TNONE || t == LUA_TNIL;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isBoolean(int idx) {
         return type(idx) == LUA_TBOOLEAN;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isInteger(int idx) {
         return stack.get(idx) instanceof Long;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isNumber(int idx) {
         return toNumberX(idx) != null;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isString(int idx) {
         LuaType t = type(idx);
         return t == LUA_TSTRING || t == LUA_TNUMBER;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isTable(int idx) {
         return type(idx) == LUA_TTABLE;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isThread(int idx) {
         return type(idx) == LUA_TTHREAD;
     }
 
+    /**
+     *
+     * @param idx
+     * @return
+     */
     @Override
     public boolean isFunction(int idx) {
         return type(idx) == LUA_TFUNCTION;
@@ -368,29 +417,63 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
     // ========== 指定类型的值入栈 ==========
 
+    /**
+     * nil 入栈
+     */
     @Override
     public void pushNil() {
         stack.push(null);
     }
 
+    /**
+     * boolean 类型入栈
+     *
+     * @param b
+     */
     @Override
     public void pushBoolean(boolean b) {
         stack.push(b);
     }
 
+    /**
+     * interger 类型入栈
+     *
+     * @param n
+     */
     @Override
     public void pushInteger(long n) {
         stack.push(n);
     }
 
+    /**
+     * number 类型入栈
+     *
+     * @param n
+     */
     @Override
     public void pushNumber(double n) {
         stack.push(n);
     }
 
+    /**
+     * 字符串类型入栈
+     *
+     * @param s
+     */
     @Override
     public void pushString(String s) {
         stack.push(s);
+    }
+
+    /**
+     * 适用于任何类型的字符串类型入栈
+     *
+     * @param fmt
+     * @param a
+     */
+    @Override
+    public void pushFString(String fmt, Object... a) {
+        pushString(String.format(fmt, a));
     }
 
     /**
@@ -515,7 +598,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
             LuaTable tbl = (LuaTable) t;
             Object v = tbl.get(k);
             // __index 元方法对象既可以是函数（t[k] 表示以 t 和 k 为参数调用该函数）也可以是表（以 k 为键访问 t）。
-            if (raw || v != null || !tbl.hasMetafield("__index")) {
+            if (raw || v != null || !tbl.hasMetafield(INDEX)) {
                 stack.push(v);
                 return LuaValue.typeOf(v);
             }
@@ -523,7 +606,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         // raw 字段为 true，则忽略元方法。
         // 如果 t[k] 的 t 是表，且键已经在表中，或者需要忽略元方法，或者表没有索引元方法，则维持原来逻辑，否则尝试调用元方法。
         if (!raw) {
-            Object mf = getMetafield(t, "__index");
+            Object mf = getMetafield(t, INDEX);
             if (mf != null) {
                 if (mf instanceof LuaTable) {
                     return getTable(mf, k, false);
@@ -590,13 +673,13 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
         if (t instanceof LuaTable) {
             LuaTable tbl = (LuaTable) t;
-            if (raw || tbl.get(k) != null || !tbl.hasMetafield("__newindex")) {
+            if (raw || tbl.get(k) != null || !tbl.hasMetafield(NEWINDEX)) {
                 tbl.put(k, v);
                 return;
             }
         }
         if (!raw) {
-            Object mf = getMetafield(t, "__newindex");
+            Object mf = getMetafield(t, NEWINDEX);
             if (mf != null) {
                 if (mf instanceof LuaTable) {
                     setTable(mf, k, v, false);
@@ -890,7 +973,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * @param rk
      */
     @Override
-    public void getRK(int rk) {
+    public void getRk(int rk) {
 
         if (rk > 0xFF) {
             // constant
@@ -1326,6 +1409,21 @@ public class LuaStateImpl implements LuaState, LuaVM {
         throw new RuntimeException(err.toString());
     }
 
+    @Override
+    public boolean stringToNumber(String s) {
+        Long i = LuaNumber.parseInteger(s);
+        if (i != null) {
+            pushInteger(i);
+            return true;
+        }
+        Double f = LuaNumber.parseFloat(s);
+        if (f != null) {
+            pushNumber(f);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * 调用函数并处理异常
      *
@@ -1347,12 +1445,450 @@ public class LuaStateImpl implements LuaState, LuaVM {
             if (msgh != 0) {
                 throw e;
             }
-            while (stack != caller) {
-                popLuaStack();
-            }
+//            while (stack == caller) {
+//                popLuaStack();
+//            }
             // TODO
             stack.push(e.getMessage());
             return LUA_ERRRUN;
         }
+    }
+
+    /**
+     * 输出指定错误类型
+     *
+     * @param fmt
+     * @param a
+     * @return
+     */
+    @Override
+    public int error2(String fmt, Object... a) {
+        pushFString(fmt, a); // todo
+        return error();
+    }
+
+    @Override
+    public int argError(int arg, String extraMsg) {
+        // TODO
+        return error2("bad argument #%d (%s)", arg, extraMsg);
+    }
+
+    /**
+     * 确保栈还有足够的剩余空间，必要时扩容，扩容失败则报错。
+     *
+     * @param sz
+     * @param msg
+     */
+    @Override
+    public void checkStack2(int sz, String msg) {
+        if (!checkStack(sz)) {
+            if (!"".equals(msg)) {
+                error2("stack overflow (%s)", msg);
+            } else {
+                error2("stack overflow");
+            }
+        }
+    }
+
+    /**
+     * 通用的参数检查
+     *
+     * @param cond
+     * @param arg
+     * @param extraMsg
+     */
+    @Override
+    public void argCheck(boolean cond, int arg, String extraMsg) {
+        if (!cond) {
+            argError(arg, extraMsg);
+        }
+    }
+
+    /**
+     * 确保某个参数一定存在
+     *
+     * @param arg
+     */
+    @Override
+    public void checkAny(int arg) {
+        if (type(arg) == LUA_TNONE) {
+            argError(arg, "value expected");
+        }
+    }
+
+    @Override
+    public void checkType(int arg, LuaType t) {
+        if (type(arg) != t) {
+            tagError(arg, t);
+        }
+    }
+
+    /**
+     * 确保参数为 integer
+     *
+     * @param arg
+     * @return
+     */
+    @Override
+    public long checkInteger(int arg) {
+        Long i = toIntegerX(arg);
+        if (i == null) {
+            intError(arg);
+        }
+        return i;
+    }
+
+    /**
+     * 确保参数为 number
+     *
+     * @param arg
+     * @return
+     */
+    @Override
+    public double checkNumber(int arg) {
+        Double f = toNumberX(arg);
+        if (f == null) {
+            tagError(arg, LUA_TNUMBER);
+        }
+        return f;
+    }
+
+    /**
+     * 确保参数为字符串
+     *
+     * @param arg
+     * @return
+     */
+    @Override
+    public String checkString(int arg) {
+        String s = toString(arg);
+        if (s == null) {
+            tagError(arg, LUA_TSTRING);
+        }
+        return s;
+    }
+
+    @Override
+    public long optInteger(int arg, long dft) {
+        return isNoneOrNil(arg) ? dft : checkInteger(arg);
+    }
+
+    @Override
+    public double optNumber(int arg, double dft) {
+        return isNoneOrNil(arg) ? dft : checkNumber(arg);
+    }
+
+    @Override
+    public String optString(int arg, String dft) {
+        return isNoneOrNil(arg) ? dft : checkString(arg);
+    }
+
+    @Override
+    public boolean doFile(String filename) {
+        return loadFile(filename) == LUA_OK &&
+            pCall(0, LUA_MULTRET, 0) == LUA_OK;
+    }
+
+    /**
+     * 加载并使用保护模式执行字符串
+     *
+     * @param str
+     * @return
+     */
+    @Override
+    public boolean doString(String str) {
+        return loadString(str) == LUA_OK && pCall(0, LUA_MULTRET, 0) == LUA_OK;
+    }
+
+    /**
+     * 加载文件
+     *
+     * @param filename
+     * @return
+     */
+    @Override
+    public ThreadStatus loadFile(String filename) {
+        return loadFileX(filename, "bt");
+    }
+
+    /**
+     * 以默认模式加载文件
+     *
+     * @param filename
+     * @param mode
+     * @return
+     */
+    @Override
+    public ThreadStatus loadFileX(String filename, String mode) {
+        try {
+            byte[] data = Files.readAllBytes(Paths.get(filename));
+            return load(data, "@" + filename, mode);
+        } catch (IOException e) {
+            return LUA_ERRFILE;
+        }
+    }
+
+    /**
+     * 加载字符串
+     *
+     * @param s
+     * @return
+     */
+    @Override
+    public ThreadStatus loadString(String s) {
+        return load(s.getBytes(), s, "bt");
+    }
+
+    @Override
+    public String typeName2(int idx) {
+        return typeName(type(idx));
+    }
+
+    /**
+     * 求长度
+     * 如果获取到的长度不是整数（调用 __len 元方法），则抛出错误。
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public long len2(int idx) {
+        len(idx);
+        Long i = toIntegerX(-1);
+        if (i == null) {
+            error2("object length is not an integer");
+        }
+        pop(1);
+        return i;
+    }
+
+    @Override
+    public String toString2(int idx) {
+        /* metafield? */
+        if (callMeta(idx, TOSTRING)) {
+            if (!isString(-1)) {
+                error2("'__tostring' must return a string");
+            }
+        } else {
+            switch (type(idx)) {
+                case LUA_TNUMBER:
+
+                    // TODO
+                    if (isInteger(idx)) {
+                        pushString(String.format("%d", toInteger(idx)));
+                    } else {
+                        pushString(String.format("%g", toNumber(idx)));
+                    }
+                    break;
+                case LUA_TSTRING:
+                    pushValue(idx);
+                    break;
+                case LUA_TBOOLEAN:
+                    pushString(toBoolean(idx) ? "true" : "false");
+                    break;
+                case LUA_TNIL:
+                    pushString("nil");
+                    break;
+                default:
+                    /* try name */
+                    LuaType tt = getMetafield(idx, "__name");
+                    String kind = tt == LUA_TSTRING ? checkString(-1) : typeName2(idx);
+                    pushString(String.format("%s: %s", kind, Objects.hashCode(idx)));
+                    if (tt != LUA_TNIL) {
+                        /* remove '__name' */
+                        remove(-2);
+                    }
+                    break;
+            }
+        }
+        return checkString(-1);
+    }
+
+    /**
+     * 检查指定索引处的表某个字段是否表，是则把子表推入栈顶并返回 true，否则创建一个空表赋值给字段并返回 false。
+     *
+     * @param idx
+     * @param fname
+     * @return
+     */
+    @Override
+    public boolean getSubTable(int idx, String fname) {
+        if (getField(idx, fname) == LUA_TTABLE) {
+            /* table already there */
+            return true;
+        }
+        /* remove previous result */
+        pop(1);
+        idx = stack.absIndex(idx);
+        newTable();
+        /* copy to be left at top */
+        pushValue(-1);
+        /* assign new table to field */
+        setField(idx, fname);
+        /* false, because did not find table there */
+        return false;
+    }
+
+    @Override
+    public LuaType getMetafield(int obj, String event) {
+        /* no metatable? */
+        if (!getMetatable(obj)) {
+            return LUA_TNIL;
+        }
+        pushString(event);
+        LuaType tt = rawGet(-2);
+        /* is metafield nil? */
+        if (tt == LUA_TNIL) {
+            /* remove metatable and metafield */
+            pop(2);
+        } else {
+            /* remove only metatable */
+            remove(-2);
+        }
+        /* return metafield type */
+        return tt;
+    }
+
+    @Override
+    public boolean callMeta(int obj, String event) {
+        obj = absIndex(obj);
+        /* no metafield? */
+        if (getMetafield(obj, event) == LUA_TNIL) {
+            return false;
+        }
+        pushValue(obj);
+        call(1, 1);
+        return true;
+    }
+
+    /**
+     * 启用标准库
+     */
+    @Override
+    public void openLibs() {
+        Map<String, JavaFunction> libs = new HashMap<>();
+        libs.put("_G", BasicLib::openBaseLib);
+
+        libs.forEach((name, fun) -> {
+            requireF(name, fun, true);
+            pop(1);
+        });
+    }
+
+    /**
+     * 开启标准库
+     *
+     * @param modname
+     * @param openf
+     * @param glb
+     */
+    @Override
+    public void requireF(String modname, JavaFunction openf, boolean glb) {
+        getSubTable(LUA_REGISTRYINDEX, "_LOADED");
+        /* LOADED[modname] */
+        getField(-1, modname);
+        /* package not already loaded? */
+        if (!toBoolean(-1)) {
+            /* remove field */
+            pop(1);
+            pushJavaFunction(openf);
+            /* argument to open function */
+            pushString(modname);
+            /* call 'openf' to open module */
+            call(1, 1);
+            /* make copy of module (call result) */
+            pushValue(-1);
+            /* _LOADED[modname] = module */
+            setField(-3, modname);
+        }
+        /* remove _LOADED table */
+        remove(-2);
+        if (glb) {
+            /* copy of module */
+            pushValue(-1);
+            /* _G[modname] = module */
+            setGlobal(modname);
+        }
+    }
+
+    @Override
+    public void newLib(Map<String, JavaFunction> l) {
+        newLibTable(l);
+        setFuncs(l, 0);
+    }
+
+    @Override
+    public void newLibTable(Map<String, JavaFunction> l) {
+        createTable(0, l.size());
+    }
+
+    /**
+     * 注册函数到全局变量表
+     *
+     * @param l
+     * @param nup
+     */
+    @Override
+    public void setFuncs(Map<String, JavaFunction> l, int nup) {
+        checkStack2(nup, "too many upvalues");
+        /* fill the table with given functions */
+        l.forEach((name, fun) -> {
+            /* copy upvalues to the top */
+            for (int i = 0; i < nup; i++) {
+                pushValue(-nup);
+            }
+            // r[-(nup+2)][name]=fun
+            /* closure with those upvalues */
+            pushJavaClosure(fun, nup);
+            setField(-(nup + 2), name);
+        });
+        /* remove upvalues */
+        pop(nup);
+    }
+
+    /**
+     * integer 类型错误
+     *
+     * @param arg
+     */
+    private void intError(int arg) {
+        if (isNumber(arg)) {
+            argError(arg, "number has no integer representation");
+        } else {
+            tagError(arg, LUA_TNUMBER);
+        }
+    }
+
+    /**
+     *
+     * @param arg
+     * @param tag
+     */
+    private void tagError(int arg, LuaType tag) {
+        typeError(arg, typeName(tag));
+    }
+
+    /**
+     * 类型错误
+     *
+     * @param arg
+     * @param tname
+     */
+    private void typeError(int arg, String tname) {
+        /* name for the type of the actual argument */
+        String typeArg;
+        if (getMetafield(arg, NAME) == LUA_TSTRING) {
+            /* use the given type name */
+            typeArg = toString(-1);
+        } else if (type(arg) == LUA_TLIGHTUSERDATA) {
+            /* special name for messages */
+            typeArg = "light userdata";
+        } else {
+            /* standard name */
+            typeArg = typeName2(arg);
+        }
+        String msg = tname + " expected, got " + typeArg;
+        pushString(msg);
+        argError(arg, msg);
     }
 }

@@ -11,7 +11,7 @@ package com.ywh.jua.vm;
  *      iAx:     [           Ax:26        ][OP:6]
  *
  * 采用偏移二进制码的方式编码，比如把 sBx 解释成无符号整数时它的值为 x，那么解释成有符号整数时值为 x-K，
- * 其中 K 取最大无符号整数值的一半，即 MAXARG_sBx
+ * 其中 K 取最大无符号整数值的一半，即 MAXARG_S_BX
  *
  * @author ywh
  * @since 2020/8/17 11:26
@@ -21,12 +21,12 @@ public class Instruction {
     /**
      * 262143
      */
-    public static final int MAXARG_Bx = (1 << 18) - 1;
+    public static final int MAXARG_BX = (1 << 18) - 1;
 
     /**
      * 131071
      */
-    public static final int MAXARG_sBx = MAXARG_Bx >> 1;
+    public static final int MAXARG_S_BX = MAXARG_BX >> 1;
 
     /**
      * 取操作码
@@ -83,7 +83,7 @@ public class Instruction {
      * @return
      */
     public static int getSBx(int i) {
-        return getBx(i) - MAXARG_sBx;
+        return getBx(i) - MAXARG_S_BX;
     }
 
     /**

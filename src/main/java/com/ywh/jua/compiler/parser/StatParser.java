@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.parser;
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 import com.ywh.jua.compiler.ast.exps.*;
 import com.ywh.jua.compiler.ast.stats.*;
 import com.ywh.jua.compiler.lexer.Lexer;
@@ -49,7 +49,7 @@ class StatParser {
      * @param lexer
      * @return
      */
-    static Stat parseStat(Lexer lexer) {
+    static BaseStat parseStat(Lexer lexer) {
         switch (lexer.LookAhead()) {
             case TOKEN_SEP_SEMI:
                 return parseEmptyStat(lexer);
@@ -116,9 +116,12 @@ class StatParser {
      */
     private static LabelStat parseLabelStat(Lexer lexer) {
         // 跳过分隔符，记录标签名。
-        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);          // ::
-        String name = lexer.nextIdentifier().getValue(); // name
-        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);          // ::
+        // ::
+        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);
+        // name
+        String name = lexer.nextIdentifier().getValue();
+        // ::
+        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);
         return new LabelStat(name);
     }
 
@@ -163,7 +166,7 @@ class StatParser {
      */
     private static WhileStat parseWhileStat(Lexer lexer) {
         lexer.nextTokenOfKind(TOKEN_KW_WHILE);
-        Exp exp = parseExp(lexer);
+        BaseExp exp = parseExp(lexer);
         lexer.nextTokenOfKind(TOKEN_KW_DO);
         Block block = parseBlock(lexer);
         lexer.nextTokenOfKind(TOKEN_KW_END);
@@ -190,7 +193,7 @@ class StatParser {
         lexer.nextTokenOfKind(TOKEN_KW_UNTIL);
 
         // exp
-        Exp exp = parseExp(lexer);
+        BaseExp exp = parseExp(lexer);
         return new RepeatStat(block, exp);
     }
 
@@ -203,7 +206,7 @@ class StatParser {
      * @return
      */
     private static IfStat parseIfStat(Lexer lexer) {
-        List<Exp> exps = new ArrayList<>();
+        List<BaseExp> exps = new ArrayList<>();
         List<Block> blocks = new ArrayList<>();
 
         // if exp then block
@@ -247,7 +250,7 @@ class StatParser {
      * @param lexer
      * @return
      */
-    private static Stat parseForStat(Lexer lexer) {
+    private static BaseStat parseForStat(Lexer lexer) {
         // 跳过 for 关键字并取行号。
         int lineOfFor = lexer.nextTokenOfKind(TOKEN_KW_FOR).getLine();
         String name = lexer.nextIdentifier().getValue();
@@ -348,8 +351,10 @@ class StatParser {
         List<String> names = new ArrayList<>();
         names.add(name0);
         while (lexer.LookAhead() == TOKEN_SEP_COMMA) {
-            lexer.nextToken();                            // ,
-            names.add(lexer.nextIdentifier().getValue()); // Name
+            // ,
+            lexer.nextToken();
+            // Name
+            names.add(lexer.nextIdentifier().getValue());
         }
         return names;
     }
@@ -363,7 +368,7 @@ class StatParser {
      * @param lexer
      * @return
      */
-    private static Stat parseLocalAssignOrFuncDefStat(Lexer lexer) {
+    private static BaseStat parseLocalAssignOrFuncDefStat(Lexer lexer) {
 
         // local
         lexer.nextTokenOfKind(TOKEN_KW_LOCAL);
@@ -408,14 +413,23 @@ class StatParser {
         return new LocalFuncDefStat(name, fdExp);
     }
 
-    // local namelist [‘=’ explist]
+    /**
+     * local namelist [‘=’ explist]
+     *
+     * @param lexer
+     * @return
+     */
     private static LocalVarDeclStat finishLocalVarDeclStat(Lexer lexer) {
-        String name0 = lexer.nextIdentifier().getValue();     // local Name
-        List<String> nameList = finishNameList(lexer, name0); // { , Name }
-        List<Exp> expList = null;
+        // local Name
+        String name0 = lexer.nextIdentifier().getValue();
+        // { , Name }
+        List<String> nameList = finishNameList(lexer, name0);
+        List<BaseExp> expList = null;
         if (lexer.LookAhead() == TOKEN_OP_ASSIGN) {
-            lexer.nextToken();                                // ==
-            expList = parseExpList(lexer);                    // explist
+            // ==
+            lexer.nextToken();
+            // explist
+            expList = parseExpList(lexer);
         }
         int lastLine = lexer.line();
         return new LocalVarDeclStat(lastLine, nameList, expList);
@@ -436,10 +450,10 @@ class StatParser {
      * @param lexer
      * @return
      */
-    private static Stat parseAssignOrFuncCallStat(Lexer lexer) {
+    private static BaseStat parseAssignOrFuncCallStat(Lexer lexer) {
 
         // 解析前缀表达式。
-        Exp prefixExp = parsePrefixExp(lexer);
+        BaseExp prefixExp = parsePrefixExp(lexer);
         if (prefixExp instanceof FuncCallExp) {
             return new FuncCallStat((FuncCallExp) prefixExp);
         } else {
@@ -456,13 +470,13 @@ class StatParser {
      * @param var0
      * @return
      */
-    private static AssignStat parseAssignStat(Lexer lexer, Exp var0) {
+    private static AssignStat parseAssignStat(Lexer lexer, BaseExp var0) {
         // varlist
-        List<Exp> varList = finishVarList(lexer, var0);
+        List<BaseExp> varList = finishVarList(lexer, var0);
         // =
         lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);
         // explist
-        List<Exp> expList = parseExpList(lexer);
+        List<BaseExp> expList = parseExpList(lexer);
         int lastLine = lexer.line();
         return new AssignStat(lastLine, varList, expList);
     }
@@ -476,15 +490,15 @@ class StatParser {
      * @param var0
      * @return
      */
-    private static List<Exp> finishVarList(Lexer lexer, Exp var0) {
-        List<Exp> vars = new ArrayList<>();
+    private static List<BaseExp> finishVarList(Lexer lexer, BaseExp var0) {
+        List<BaseExp> vars = new ArrayList<>();
         // var
         vars.add(checkVar(lexer, var0));
         while (lexer.LookAhead() == TOKEN_SEP_COMMA) {
             // ,
             lexer.nextToken();
             // var
-            Exp exp = parsePrefixExp(lexer);
+            BaseExp exp = parsePrefixExp(lexer);
             vars.add(checkVar(lexer, exp));
         }
         return vars;
@@ -499,13 +513,14 @@ class StatParser {
      * @param exp
      * @return
      */
-    private static Exp checkVar(Lexer lexer, Exp exp) {
+    private static BaseExp checkVar(Lexer lexer, BaseExp exp) {
 
         // t.k 或 t["k"]
         if (exp instanceof NameExp || exp instanceof TableAccessExp) {
             return exp;
         }
-        lexer.nextTokenOfKind(null); // trigger error
+        // trigger error
+        lexer.nextTokenOfKind(null);
         throw new RuntimeException("unreachable!");
     }
 
@@ -527,8 +542,8 @@ class StatParser {
         lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);
 
         // funcname
-        Map<Exp, Boolean> map = parseFuncName(lexer);
-        Exp fnExp = map.keySet().iterator().next();
+        Map<BaseExp, Boolean> map = parseFuncName(lexer);
+        BaseExp fnExp = map.keySet().iterator().next();
         boolean hasColon = map.values().iterator().next();
 
         // funcbody
@@ -553,11 +568,11 @@ class StatParser {
      * @param lexer
      * @return
      */
-    private static Map<Exp, Boolean> parseFuncName(Lexer lexer) {
+    private static Map<BaseExp, Boolean> parseFuncName(Lexer lexer) {
 
         // 取标识符为名称表达式
         Token id = lexer.nextIdentifier();
-        Exp exp = new NameExp(id.getLine(), id.getValue());
+        BaseExp exp = new NameExp(id.getLine(), id.getValue());
         boolean hasColon = false;
 
 
@@ -565,7 +580,7 @@ class StatParser {
         while (lexer.LookAhead() == TOKEN_SEP_DOT) {
             lexer.nextToken();
             id = lexer.nextIdentifier();
-            Exp idx = new StringExp(id);
+            BaseExp idx = new StringExp(id);
             exp = new TableAccessExp(id.getLine(), exp, idx);
         }
 
@@ -573,7 +588,7 @@ class StatParser {
         if (lexer.LookAhead() == TOKEN_SEP_COLON) {
             lexer.nextToken();
             id = lexer.nextIdentifier();
-            Exp idx = new StringExp(id);
+            BaseExp idx = new StringExp(id);
             exp = new TableAccessExp(id.getLine(), exp, idx);
             hasColon = true;
         }

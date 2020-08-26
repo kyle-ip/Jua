@@ -25,7 +25,11 @@ class CharSeq implements CharSequence {
         this.str = str;
     }
 
-    // TODO rename
+    /**
+     * TODO rename
+     *
+     * @return
+     */
     char nextChar() {
         return str.charAt(pos++);
     }

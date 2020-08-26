@@ -1,7 +1,7 @@
 package com.ywh.jua.compiler.ast.exps;
 
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.PrefixExp;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BasePrefixExp;
 
 import java.util.List;
 
@@ -13,9 +13,9 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class FuncCallExp extends PrefixExp {
+public class FuncCallExp extends BasePrefixExp {
 
-    private Exp prefixExp;
+    private BaseExp prefixExp;
 
     /**
      * SELF 指令支持（语法糖）
@@ -25,13 +25,13 @@ public class FuncCallExp extends PrefixExp {
     /**
      * 参数表
      */
-    private List<Exp> args;
+    private List<BaseExp> args;
 
-    public Exp getPrefixExp() {
+    public BaseExp getPrefixExp() {
         return prefixExp;
     }
 
-    public void setPrefixExp(Exp prefixExp) {
+    public void setPrefixExp(BaseExp prefixExp) {
         this.prefixExp = prefixExp;
     }
 
@@ -43,11 +43,11 @@ public class FuncCallExp extends PrefixExp {
         this.nameExp = nameExp;
     }
 
-    public List<Exp> getArgs() {
+    public List<BaseExp> getArgs() {
         return args;
     }
 
-    public void setArgs(List<Exp> args) {
+    public void setArgs(List<BaseExp> args) {
         this.args = args;
     }
 }

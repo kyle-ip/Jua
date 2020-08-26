@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.ast.exps;
 
 
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.PrefixExp;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BasePrefixExp;
 
 /**
  * 圆括号表达式
@@ -10,19 +10,19 @@ import com.ywh.jua.compiler.ast.PrefixExp;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class ParensExp extends PrefixExp {
+public class ParensExp extends BasePrefixExp {
 
-    private Exp exp;
+    private BaseExp exp;
 
-    public ParensExp(Exp exp) {
+    public ParensExp(BaseExp exp) {
         this.exp = exp;
     }
 
-    public Exp getExp() {
+    public BaseExp getExp() {
         return exp;
     }
 
-    public void setExp(Exp exp) {
+    public void setExp(BaseExp exp) {
         this.exp = exp;
     }
 }

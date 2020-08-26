@@ -2,7 +2,7 @@ package com.ywh.jua.compiler.ast.stats;
 
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 /**
  * do 语句
@@ -11,7 +11,7 @@ import com.ywh.jua.compiler.ast.Stat;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class DoStat extends Stat {
+public class DoStat extends BaseStat {
 
     /**
      * 块

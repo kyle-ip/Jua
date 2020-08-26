@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.codegen;
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 import com.ywh.jua.compiler.ast.exps.FuncCallExp;
 import com.ywh.jua.compiler.ast.exps.NameExp;
 
@@ -27,7 +27,7 @@ class BlockProcessor {
      */
     static void processBlock(FuncInfo fi, Block node) {
         // 处理块中的每条语句
-        for (Stat stat : node.getStats()) {
+        for (BaseStat stat : node.getStats()) {
             processStat(fi, stat);
         }
         // 处理返回语句
@@ -43,7 +43,7 @@ class BlockProcessor {
      * @param exps
      * @param lastLine
      */
-    private static void processRetStat(FuncInfo fi, List<Exp> exps, int lastLine) {
+    private static void processRetStat(FuncInfo fi, List<BaseExp> exps, int lastLine) {
         int nExps = exps.size();
         if (nExps == 0) {
             fi.emitReturn(lastLine, 0, 0);
@@ -71,7 +71,7 @@ class BlockProcessor {
 
         boolean multRet = ExpHelper.isVarargOrFuncCall(exps.get(nExps-1));
         for (int i = 0; i < nExps; i++) {
-            Exp exp = exps.get(i);
+            BaseExp exp = exps.get(i);
             int r = fi.allocReg();
             if (i == nExps-1 && multRet) {
                 processExp(fi, exp, r, -1);
@@ -81,7 +81,8 @@ class BlockProcessor {
         }
         fi.freeRegs(nExps);
 
-        int a = fi.usedRegs; // correct?
+        // correct?
+        int a = fi.usedRegs;
         if (multRet) {
             fi.emitReturn(lastLine, a, -1);
         } else {

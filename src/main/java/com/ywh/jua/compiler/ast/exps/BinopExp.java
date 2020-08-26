@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.exps;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.lexer.Token;
 import com.ywh.jua.compiler.lexer.TokenKind;
 
@@ -10,7 +10,7 @@ import com.ywh.jua.compiler.lexer.TokenKind;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class BinopExp extends Exp {
+public class BinopExp extends BaseExp {
 
     /**
      * 运算符
@@ -20,14 +20,14 @@ public class BinopExp extends Exp {
     /**
      * 表达式 1
      */
-    private Exp exp1;
+    private BaseExp exp1;
 
     /**
      * 表达式 2
      */
-    private Exp exp2;
+    private BaseExp exp2;
 
-    public BinopExp(Token op, Exp exp1, Exp exp2) {
+    public BinopExp(Token op, BaseExp exp1, BaseExp exp2) {
         setLine(op.getLine());
         this.exp1 = exp1;
         this.exp2 = exp2;
@@ -49,19 +49,19 @@ public class BinopExp extends Exp {
         this.op = op;
     }
 
-    public Exp getExp1() {
+    public BaseExp getExp1() {
         return exp1;
     }
 
-    public void setExp1(Exp exp1) {
+    public void setExp1(BaseExp exp1) {
         this.exp1 = exp1;
     }
 
-    public Exp getExp2() {
+    public BaseExp getExp2() {
         return exp2;
     }
 
-    public void setExp2(Exp exp2) {
+    public void setExp2(BaseExp exp2) {
         this.exp2 = exp2;
     }
 }

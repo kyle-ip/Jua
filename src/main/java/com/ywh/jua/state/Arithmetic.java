@@ -106,7 +106,7 @@ public class Arithmetic {
         null,
     };
 
-    private static final String[] metamethods = {
+    private static final String[] METAMETHODS = {
         "__add",
         "__sub",
         "__mul",
@@ -158,7 +158,7 @@ public class Arithmetic {
         }
 
         // 当一个操作数不是（或无法转换为）数值时，查找元方法，如果存在则调用。
-        Object mm = ls.getMetamethod(a, b, metamethods[op.ordinal()]);
+        Object mm = ls.getMetamethod(a, b, METAMETHODS[op.ordinal()]);
         if (mm != null) {
             return ls.callMetamethod(a, b, mm);
         }

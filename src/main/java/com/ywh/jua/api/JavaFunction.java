@@ -11,6 +11,12 @@ package com.ywh.jua.api;
 @FunctionalInterface
 public interface JavaFunction {
 
+    /**
+     * 调用函数
+     *
+     * @param ls
+     * @return
+     */
     int invoke(LuaState ls);
 
 }

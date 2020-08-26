@@ -1,7 +1,7 @@
 package com.ywh.jua.compiler.ast.stats;
 
 
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseStat;
 import com.ywh.jua.compiler.ast.exps.FuncCallExp;
 
 /**
@@ -11,7 +11,7 @@ import com.ywh.jua.compiler.ast.exps.FuncCallExp;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class FuncCallStat extends Stat {
+public class FuncCallStat extends BaseStat {
 
     private FuncCallExp exp;
 

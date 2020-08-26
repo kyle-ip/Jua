@@ -1,7 +1,7 @@
 package com.ywh.jua.compiler.ast.stats;
 
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class LocalVarDeclStat extends Stat {
+public class LocalVarDeclStat extends BaseStat {
 
     /**
      * 等号左侧的标识符列表
@@ -26,9 +26,9 @@ public class LocalVarDeclStat extends Stat {
     /**
      * 等号右侧的表达式列表
      */
-    private List<Exp> expList;
+    private List<BaseExp> expList;
 
-    public LocalVarDeclStat(int lastLine, List<String> nameList, List<Exp> expList) {
+    public LocalVarDeclStat(int lastLine, List<String> nameList, List<BaseExp> expList) {
         setLastLine(lastLine);
         this.nameList = nameList != null ? nameList : Collections.emptyList();
         this.expList = expList != null ? expList : Collections.emptyList();
@@ -42,11 +42,11 @@ public class LocalVarDeclStat extends Stat {
         this.nameList = nameList;
     }
 
-    public List<Exp> getExpList() {
+    public List<BaseExp> getExpList() {
         return expList;
     }
 
-    public void setExpList(List<Exp> expList) {
+    public void setExpList(List<BaseExp> expList) {
         this.expList = expList;
     }
 }

@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.ast.stats;
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.Stat;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BaseStat;
 
 
 /**
@@ -14,7 +14,7 @@ import com.ywh.jua.compiler.ast.Stat;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class ForNumStat extends Stat {
+public class ForNumStat extends BaseStat {
 
     /**
      * for 所在行号
@@ -34,17 +34,17 @@ public class ForNumStat extends Stat {
     /**
      * 初始表达式
      */
-    private Exp InitExp;
+    private BaseExp initExp;
 
     /**
      * 限制表达式
      */
-    private Exp LimitExp;
+    private BaseExp limitExp;
 
     /**
      * 步长表达式
      */
-    private Exp StepExp;
+    private BaseExp stepExp;
 
     /**
      * 代码块
@@ -75,28 +75,28 @@ public class ForNumStat extends Stat {
         this.varName = varName;
     }
 
-    public Exp getInitExp() {
-        return InitExp;
+    public BaseExp getInitExp() {
+        return initExp;
     }
 
-    public void setInitExp(Exp initExp) {
-        InitExp = initExp;
+    public void setInitExp(BaseExp initExp) {
+        this.initExp = initExp;
     }
 
-    public Exp getLimitExp() {
-        return LimitExp;
+    public BaseExp getLimitExp() {
+        return limitExp;
     }
 
-    public void setLimitExp(Exp limitExp) {
-        LimitExp = limitExp;
+    public void setLimitExp(BaseExp limitExp) {
+        this.limitExp = limitExp;
     }
 
-    public Exp getStepExp() {
-        return StepExp;
+    public BaseExp getStepExp() {
+        return stepExp;
     }
 
-    public void setStepExp(Exp stepExp) {
-        StepExp = stepExp;
+    public void setStepExp(BaseExp stepExp) {
+        this.stepExp = stepExp;
     }
 
     public Block getBlock() {

@@ -1,7 +1,7 @@
 package com.ywh.jua.compiler.ast.exps;
 
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 
 /**
  * true 表达式
@@ -9,7 +9,7 @@ import com.ywh.jua.compiler.ast.Exp;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class TrueExp extends Exp {
+public class TrueExp extends BaseExp {
 
     public TrueExp(int line) {
         setLine(line);

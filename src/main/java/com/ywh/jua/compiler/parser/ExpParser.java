@@ -2,7 +2,7 @@ package com.ywh.jua.compiler.parser;
 
 
 import com.ywh.jua.compiler.ast.Block;
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.ast.exps.*;
 import com.ywh.jua.compiler.lexer.Lexer;
 import com.ywh.jua.compiler.lexer.Token;
@@ -33,8 +33,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    static List<Exp> parseExpList(Lexer lexer) {
-        List <Exp> exps = new ArrayList<>();
+    static List<BaseExp> parseExpList(Lexer lexer) {
+        List <BaseExp> exps = new ArrayList<>();
         // 解析第一个表达式
         exps.add(parseExp(lexer));
 
@@ -75,7 +75,7 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    static Exp parseExp(Lexer lexer) {
+    static BaseExp parseExp(Lexer lexer) {
         return parseExp12(lexer);
     }
 
@@ -88,8 +88,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp12(Lexer lexer) {
-        Exp exp = parseExp11(lexer);
+    private static BaseExp parseExp12(Lexer lexer) {
+        BaseExp exp = parseExp11(lexer);
 
         // or
         // 逻辑或具有左结合性，在循环中调用 parseExp11 解析更高优先级的运算符表达式。
@@ -119,8 +119,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp11(Lexer lexer) {
-        Exp exp = parseExp10(lexer);
+    private static BaseExp parseExp11(Lexer lexer) {
+        BaseExp exp = parseExp10(lexer);
         while (lexer.LookAhead() == TOKEN_OP_AND) {
             Token op = lexer.nextToken();
             BinopExp land = new BinopExp(op, exp, parseExp10(lexer));
@@ -137,8 +137,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp10(Lexer lexer) {
-        Exp exp = parseExp9(lexer);
+    private static BaseExp parseExp10(Lexer lexer) {
+        BaseExp exp = parseExp9(lexer);
         while (true) {
             switch (lexer.LookAhead()) {
                 case TOKEN_OP_LT:
@@ -164,8 +164,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp9(Lexer lexer) {
-        Exp exp = parseExp8(lexer);
+    private static BaseExp parseExp9(Lexer lexer) {
+        BaseExp exp = parseExp8(lexer);
         while (lexer.LookAhead() == TOKEN_OP_BOR) {
             Token op = lexer.nextToken();
             BinopExp bor = new BinopExp(op, exp, parseExp8(lexer));
@@ -182,8 +182,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp8(Lexer lexer) {
-        Exp exp = parseExp7(lexer);
+    private static BaseExp parseExp8(Lexer lexer) {
+        BaseExp exp = parseExp7(lexer);
         while (lexer.LookAhead() == TOKEN_OP_WAVE) {
             Token op = lexer.nextToken();
             BinopExp bxor = new BinopExp(op, exp, parseExp7(lexer));
@@ -200,8 +200,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp7(Lexer lexer) {
-        Exp exp = parseExp6(lexer);
+    private static BaseExp parseExp7(Lexer lexer) {
+        BaseExp exp = parseExp6(lexer);
         while (lexer.LookAhead() == TOKEN_OP_BAND) {
             Token op = lexer.nextToken();
             BinopExp band = new BinopExp(op, exp, parseExp6(lexer));
@@ -218,8 +218,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp6(Lexer lexer) {
-        Exp exp = parseExp5(lexer);
+    private static BaseExp parseExp6(Lexer lexer) {
+        BaseExp exp = parseExp5(lexer);
         while (true) {
             switch (lexer.LookAhead()) {
                 case TOKEN_OP_SHL:
@@ -242,7 +242,7 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp5(Lexer lexer) {
+    private static BaseExp parseExp5(Lexer lexer) {
         // 虽然拼接运算符也具有右结合性，但是由于其对应的 Lua 虚拟机指令 CONCAT 比较特别；
         // 所以需要做特殊处理：生成多叉树。
 
@@ -251,12 +251,12 @@ class ExpParser {
         //    /  |  \
         //   a   b   c
 
-        Exp exp = parseExp4(lexer);
+        BaseExp exp = parseExp4(lexer);
         if (lexer.LookAhead() != TOKEN_OP_CONCAT) {
             return exp;
         }
 
-        List<Exp> exps = new ArrayList<>();
+        List<BaseExp> exps = new ArrayList<>();
         exps.add(exp);
         int line = 0;
         while (lexer.LookAhead() == TOKEN_OP_CONCAT) {
@@ -274,8 +274,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp4(Lexer lexer) {
-        Exp exp = parseExp3(lexer);
+    private static BaseExp parseExp4(Lexer lexer) {
+        BaseExp exp = parseExp3(lexer);
         while (true) {
             switch (lexer.LookAhead()) {
                 case TOKEN_OP_ADD:
@@ -298,8 +298,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp3(Lexer lexer) {
-        Exp exp = parseExp2(lexer);
+    private static BaseExp parseExp3(Lexer lexer) {
+        BaseExp exp = parseExp2(lexer);
         while (true) {
             switch (lexer.LookAhead()) {
                 case TOKEN_OP_MUL:
@@ -325,7 +325,7 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp2(Lexer lexer) {
+    private static BaseExp parseExp2(Lexer lexer) {
         switch (lexer.LookAhead()) {
             case TOKEN_OP_MINUS:
             case TOKEN_OP_WAVE:
@@ -348,8 +348,8 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp1(Lexer lexer) {
-        Exp exp = parseExp0(lexer);
+    private static BaseExp parseExp1(Lexer lexer) {
+        BaseExp exp = parseExp0(lexer);
 
         // 乘方具有右结合性，因此递归调用自己解析后面的乘方运算符表达式。
         // a ^ b ^ c 的表达式 AST
@@ -372,7 +372,7 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseExp0(Lexer lexer) {
+    private static BaseExp parseExp0(Lexer lexer) {
 
         // 前瞻一个 token 决定具体要解析哪种表达式。
         // 其中 vararg 和非数字字面量表达式比较简单，直接写在 case 语句里
@@ -405,7 +405,7 @@ class ExpParser {
      * @param lexer
      * @return
      */
-    private static Exp parseNumberExp(Lexer lexer) {
+    private static BaseExp parseNumberExp(Lexer lexer) {
         Token token = lexer.nextToken();
         Long i = LuaNumber.parseInteger(token.getValue());
         if (i != null) {
@@ -582,7 +582,7 @@ class ExpParser {
             return;
         }
 
-        Exp exp = parseExp(lexer);
+        BaseExp exp = parseExp(lexer);
         if (exp instanceof NameExp) {
             if (lexer.LookAhead() == TOKEN_OP_ASSIGN) {
                 // Name ‘=’ exp => ‘[’ LiteralString ‘]’ = exp

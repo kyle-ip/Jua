@@ -43,7 +43,12 @@ class LuaValue {
         }
     }
 
-    // http://www.lua.org/manual/5.3/manual.html#3.4.3
+    /**
+     * http://www.lua.org/manual/5.3/manual.html#3.4.3
+     *
+     * @param val
+     * @return
+     */
     static Double toFloat(Object val) {
         if (val instanceof Double) {
             return (Double) val;
@@ -56,7 +61,12 @@ class LuaValue {
         }
     }
 
-    // http://www.lua.org/manual/5.3/manual.html#3.4.3
+    /**
+     * http://www.lua.org/manual/5.3/manual.html#3.4.3
+     *
+     * @param val
+     * @return
+     */
     static Long toInteger(Object val) {
         if (val instanceof Long) {
             return (Long) val;

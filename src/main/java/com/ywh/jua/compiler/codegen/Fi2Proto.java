@@ -77,7 +77,8 @@ class Fi2Proto {
         for (FuncInfo.UpvalInfo uvInfo : fi.upvalues.values()) {
             Upvalue upval = new Upvalue();
             upvals[uvInfo.index] = upval;
-            if (uvInfo.locVarSlot >= 0) { // instack
+            // instack
+            if (uvInfo.locVarSlot >= 0) {
                 upval.setInstack((byte) 1);
                 upval.setIdx((byte) uvInfo.locVarSlot);
             } else {

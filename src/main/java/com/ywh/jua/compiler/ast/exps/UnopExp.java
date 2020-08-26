@@ -1,6 +1,6 @@
 package com.ywh.jua.compiler.ast.exps;
 
-import com.ywh.jua.compiler.ast.Exp;
+import com.ywh.jua.compiler.ast.BaseExp;
 import com.ywh.jua.compiler.lexer.Token;
 import com.ywh.jua.compiler.lexer.TokenKind;
 
@@ -10,7 +10,7 @@ import com.ywh.jua.compiler.lexer.TokenKind;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class UnopExp extends Exp {
+public class UnopExp extends BaseExp {
 
     /**
      * 运算符
@@ -20,9 +20,9 @@ public class UnopExp extends Exp {
     /**
      * 表达式
      */
-    private Exp exp;
+    private BaseExp exp;
 
-    public UnopExp(Token op, Exp exp) {
+    public UnopExp(Token op, BaseExp exp) {
         setLine(op.getLine());
         this.exp = exp;
 
@@ -43,11 +43,11 @@ public class UnopExp extends Exp {
         this.op = op;
     }
 
-    public Exp getExp() {
+    public BaseExp getExp() {
         return exp;
     }
 
-    public void setExp(Exp exp) {
+    public void setExp(BaseExp exp) {
         this.exp = exp;
     }
 }

@@ -1,8 +1,8 @@
 package com.ywh.jua.compiler.ast.exps;
 
 
-import com.ywh.jua.compiler.ast.Exp;
-import com.ywh.jua.compiler.ast.PrefixExp;
+import com.ywh.jua.compiler.ast.BaseExp;
+import com.ywh.jua.compiler.ast.BasePrefixExp;
 
 /**
  * 表访问表达式
@@ -11,31 +11,31 @@ import com.ywh.jua.compiler.ast.PrefixExp;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class TableAccessExp extends PrefixExp {
+public class TableAccessExp extends BasePrefixExp {
 
-    private Exp prefixExp;
+    private BaseExp prefixExp;
 
-    private Exp keyExp;
+    private BaseExp keyExp;
 
-    public TableAccessExp(int lastLine, Exp prefixExp, Exp keyExp) {
+    public TableAccessExp(int lastLine, BaseExp prefixExp, BaseExp keyExp) {
         setLastLine(lastLine);
         this.prefixExp = prefixExp;
         this.keyExp = keyExp;
     }
 
-    public Exp getPrefixExp() {
+    public BaseExp getPrefixExp() {
         return prefixExp;
     }
 
-    public void setPrefixExp(Exp prefixExp) {
+    public void setPrefixExp(BaseExp prefixExp) {
         this.prefixExp = prefixExp;
     }
 
-    public Exp getKeyExp() {
+    public BaseExp getKeyExp() {
         return keyExp;
     }
 
-    public void setKeyExp(Exp keyExp) {
+    public void setKeyExp(BaseExp keyExp) {
         this.keyExp = keyExp;
     }
 }

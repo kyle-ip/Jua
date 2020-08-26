@@ -17,31 +17,31 @@ import java.util.List;
  * @author ywh
  * @since 2020/8/25 11:26
  */
-public class Block extends Node {
+public class Block extends BaseNode {
 
     /**
      * 语句
      */
-    private List<Stat> stats;
+    private List<BaseStat> stats;
 
     /**
      * 返回语句
      */
-    private List<Exp> retExps;
+    private List<BaseExp> retExps;
 
-    public List<Stat> getStats() {
+    public List<BaseStat> getStats() {
         return stats;
     }
 
-    public void setStats(List<Stat> stats) {
+    public void setStats(List<BaseStat> stats) {
         this.stats = stats;
     }
 
-    public List<Exp> getRetExps() {
+    public List<BaseExp> getRetExps() {
         return retExps;
     }
 
-    public void setRetExps(List<Exp> retExps) {
+    public void setRetExps(List<BaseExp> retExps) {
         this.retExps = retExps;
     }
 }
