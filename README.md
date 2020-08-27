@@ -12,7 +12,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 - Data Structure
 - Register-based Virtual Machine & Instruction Set Design
 - Compilers
-- Lua grammar & Standard Library
+- Lua grammar & Standard Libraries
 
 ## Features
 
