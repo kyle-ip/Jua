@@ -14,10 +14,7 @@ import com.ywh.jua.compiler.parser.Parser;
 import com.ywh.jua.state.LuaStateImpl;
 import com.ywh.jua.vm.OpCode;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import static com.ywh.jua.api.LuaType.LUA_TNIL;
 import static com.ywh.jua.api.ThreadStatus.LUA_OK;
@@ -36,43 +33,18 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws IOException {
-        String fileName = "G:\\demo\\jua\\test.lua";
-        if (args.length <= 0 || !new File(args[0]).exists()) {
-            throw new RuntimeException("file is not exist!");
-        }
+        String fileName = "G:\\demo\\jua\\src\\test\\resources\\hello_world.lua";
+//        if (args.length <= 0 || !new File(args[0]).exists()) {
+//            throw new RuntimeException("file is not exist!");
+//        }
 
         LuaStateImpl ls = new LuaStateImpl();
         ls.openLibs();
-        ls.loadFile(args[0]);
+        ls.loadFile(fileName);
         ls.call(0, -1);
 
-//        if (args.length > 0) {
-//            LuaState ls = new LuaStateImpl();
-//            ls.openLibs();
-//            ls.loadFile("C:\\Project\\other-project\\jua\\target\\test.lua");
-//            ls.call(0, -1);
-//        }
 
 //        byte[] data = Files.readAllBytes(Paths.get(fileName));
-
-//        Prototype proto = BinaryChunk.undump(data);
-//        list(proto);
-
-//        ls.load(data, fileName, "b");
-//        ls.call(0, 0);
-
-//        ls.register("print", Main::print);
-//        ls.register("getmetatable", Main::getMetatable);
-//        ls.register("setmetatable", Main::setMetatable);
-//        ls.register("next", Main::next);
-//        ls.register("pairs", Main::pairs);
-//        ls.register("ipairs", Main::iPairs);
-//        ls.register("error", Main::error);
-//        ls.register("pcall", Main::pCall);
-//        ls.load(data, fileName, "bt");
-//        ls.call(0, 0);
-
-        byte[] data = Files.readAllBytes(Paths.get(fileName));
 //        testLexer(new String(data), fileName);
 //        testParser(new String(data), fileName);
     }

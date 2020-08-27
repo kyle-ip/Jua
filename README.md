@@ -161,26 +161,28 @@ mvn clean package
 
 ### Script
 
-hello_world.lua
-
+sum.lua
 ```lua
-local sum = 0
-for i = 1, 100 do
-    if i % 2 == 0 then
-        sum = sum + i
+function sum()
+    local s = 0
+    for i = 1, 100 do
+        if i % 2 == 0 then
+            s = s + math.sqrt(i)
+        end
     end
+    return s
 end
-print(sum)
+print(sum())
 ```
 
 ### Run
 
 ```shell
-java -jar jua-1.0-SNAPSHOT.jar hello_world.lua
+java -jar jua-1.0-SNAPSHOT.jar sum.lua
 ```
 
 ```
-2550
+338.048
 ```
 
 ## Links

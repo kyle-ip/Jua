@@ -14,8 +14,8 @@ import static org.junit.Assert.assertEquals;
 public class BinaryChunkTest {
 
     /**
-     * echo "print("Hello, World!")" >> hello_world.lua
-     * luac -o hello_world.luac hello_world.lua
+     * echo "print("Hello, World!")" >> sum.lua
+     * luac -o hello_world.luac sum.lua
      *
      * @throws Exception
      */
@@ -24,7 +24,7 @@ public class BinaryChunkTest {
         byte[] hwData = Files.readAllBytes(Paths.get(getClass().getResource("/hello_world.luac").toURI()));
         Prototype proto = BinaryChunk.undump(hwData);
 
-        assertEquals("@hello_world.lua", proto.getSource());
+        assertEquals("@sum.lua", proto.getSource());
         assertEquals(0, proto.getLineDefined());
         assertEquals(0, proto.getLastLineDefined());
         assertEquals(0, proto.getNumParams());
