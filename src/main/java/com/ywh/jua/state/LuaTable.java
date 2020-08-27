@@ -82,7 +82,6 @@ class LuaTable {
      * @return
      */
     Object get(Object key) {
-
         // 如果数组非空，且 key 可以转换为 Long 类型，则按数组的方式访问；否则按哈希表的方式访问。
         key = floatToInteger(key);
         if (arr != null && key instanceof Long) {

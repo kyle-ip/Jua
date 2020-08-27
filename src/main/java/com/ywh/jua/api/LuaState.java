@@ -37,4 +37,7 @@ public interface LuaState extends LuaBasicAPI, LuaAuxLib {
 
     int LUA_MULTRET = -1;
 
+    int LUA_RIDX_MAINTHREAD = 1;
+
+
 }

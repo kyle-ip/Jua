@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.ywh.jua.api.ArithOp.LUA_OPBNOT;
 import static com.ywh.jua.api.ArithOp.LUA_OPUNM;
@@ -36,19 +37,34 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * 注册表是全局状态，每个 Lua 解释器实例都有自己的注册表。
      * Lua API 没有提供专门的方法操作注册表，通过伪索引访问。
      */
-    LuaTable registry = new LuaTable(0, 0);
+    LuaTable registry = new LuaTable(8, 0);
 
     /**
      * 使用单向链表实现函数调用栈，头部是栈顶，尾部是栈底。
      * 入栈即在链表头部插入一个节点，让这个节点成为新的头部。
+     * FIXME
      */
-    private LuaStack stack = new LuaStack(LUA_MINSTACK);
+    LuaStack stack = new LuaStack(LUA_MINSTACK);
 
+    ThreadStatus coStatus;
+
+    LuaStateImpl coCaller;
+
+    /**
+     * 线程协作变量（模拟 Golang 的 chan）
+     * coChan == 0 表示首次开始运行（需要启动一个 Golang 协程来执行其主函数）；
+     * 否则线程恢复运行，修改为非 0 的值即可。
+     */
+    AtomicInteger coChan = new AtomicInteger(0);
+
+    /**
+     * 创建注册表，放入一个全局环境（存放全局变量）和主线程环境；
+     * 推入一个空的 Lua 栈（调用帧）。
+     *
+     */
     public LuaStateImpl() {
-        // 创建注册表，放入一个全局环境（用于存放全局变量）。
-        registry.put(LUA_RIDX_GLOBALS, new LuaTable(0, 0));
-
-        // 推入一个空 Lua 栈（调用帧）。
+        registry.put(LUA_RIDX_MAINTHREAD, this);
+        registry.put(LUA_RIDX_GLOBALS, new LuaTable(0, 20));
         LuaStack stack = new LuaStack(LUA_MINSTACK);
         stack.state = this;
         pushLuaStack(stack);
@@ -936,11 +952,6 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
     }
 
-    public int getPC() {
-        return stack.pc;
-    }
-
-
     /**
      * 修改 PC（用于实现跳转指令）
      *
@@ -1413,6 +1424,147 @@ public class LuaStateImpl implements LuaState, LuaVM {
         throw new RuntimeException(err.toString());
     }
 
+
+    /**
+     * 创建线程，把它推入栈顶，同时作为返回值。
+     *
+     * @return
+     */
+    @Override
+    public LuaStateImpl newThread(){
+        // 创建线程及其调用栈。
+        LuaStateImpl thread = new LuaStateImpl();
+        LuaStack stack = new LuaStack(LUA_MINSTACK);
+
+        // 子线程与父线程共享全局变量。
+        thread.registry = this.registry;
+        stack.state = thread;
+        thread.pushLuaStack(stack);
+
+        // 子线程添加到父线程调用栈中。
+        this.stack.push(thread);
+        return thread;
+    }
+
+    /**
+     * 恢复协程
+     * TODO 改线程实现
+     *
+     * @param from
+     * @param nArgs
+     * @return
+     */
+    @Override
+    public ThreadStatus resume(LuaStateImpl from, int nArgs) {
+        // 如果 coChan 的值为 0，表示首次运行，需要启动一个协程执行主函数。
+        if (coChan.get() == 0) {
+            this.coCaller = from;
+            this.coStatus = pCall(nArgs, -1, 0);
+            from.coChan.set(1);
+        } else {
+            this.coStatus = LUA_OK;
+            this.coChan.set(1);
+        }
+        return coStatus;
+    }
+
+    /**
+     * 挂起线程
+     * 通知协作方恢复运行，最后等待再一次恢复运行。
+     * TODO 改线程实现
+     *
+     * @param nResults
+     * @return
+     */
+    @Override
+    public int yield(int nResults) {
+        this.coStatus = LUA_YIELD;
+        this.coCaller.coChan.set(0);
+        while (coChan.get() != 1) {
+            // wait for other coroutine to wake up
+            ;
+        }
+        return this.getTop();
+    }
+
+    /**
+     * 查看栈顶协程状态
+     *
+     * @return
+     */
+    @Override
+    public ThreadStatus status() {
+        return this.coStatus;
+    }
+
+    /**
+     *
+     * @return
+     */
+    @Override
+    public boolean isYieldAble() {
+        return false;
+    }
+
+    /**
+     * 把指定索引处的值转换为线程并返回，如果值不是线程则返回空。
+     *
+     * @param idx
+     * @return
+     */
+    @Override
+    public LuaStateImpl toThread(int idx) {
+        Object val = stack.get(idx);
+        if (val instanceof LuaState) {
+            return (LuaStateImpl) val;
+        }
+        return null;
+    }
+
+    /**
+     * 把线程推入栈顶，返回该线程是否主线程。
+     *
+     * @return
+     */
+    @Override
+    public boolean pushThread() {
+        stack.push(this);
+        return isMainThread();
+    }
+
+    /**
+     * 两个线程的栈之间移动元素
+     * 从主调用线程栈中弹出 n 个元素，推入被调用线程栈。
+     *
+     * @param to
+     * @param n
+     */
+    @Override
+    public void xMove(LuaStateImpl to, int n) {
+        List<Object> vals = stack.popN(n);
+        to.stack.pushN(vals, n);
+    }
+
+    /**
+     * debug
+     *
+     * @return
+     */
+    @Override
+    public boolean getStack() {
+        return stack.prev != null;
+    }
+
+    /**
+     * 判断是否主线程
+     *
+     * @return
+     */
+    @Override
+    public boolean isMainThread() {
+        return this.registry.get(LUA_RIDX_MAINTHREAD) == this;
+    }
+
     @Override
     public boolean stringToNumber(String s) {
         Long i = LuaNumber.parseInteger(s);
@@ -1787,9 +1939,10 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Map<String, JavaFunction> libs = new HashMap<>();
         libs.put("_G", BasicLib::openBaseLib);
         libs.put("math", MathLib::openMathLib);
-//        libs.put("os", OSLib::openOSLib);
-//        libs.put("string", StringLib::openStringLib);
+        libs.put("os", OSLib::openOSLib);
+        libs.put("string", StringLib::openStringLib);
         libs.put("package", PackageLib::openPackageLib);
+        libs.put("coroutine", CoroutineLib::openBaseLib);
         libs.forEach((name, fun) -> {
             requireF(name, fun, true);
             pop(1);
@@ -1936,7 +2089,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
         for (;;) {
             // 取程序计数器、下一条指令
-            int pc = this.getPC(), i = this.fetch();
+            int pc = stack.pc, i = this.fetch();
             OpCode opCode = Instruction.getOpCode(i);
             if (opCode != OpCode.RETURN && opCode.getAction() != null) {
                 System.out.println(opCode.name());
@@ -1944,7 +2097,28 @@ public class LuaStateImpl implements LuaState, LuaVM {
                 // 打印 PC 和指令名称
                 System.out.printf("[%02d] %-8s ", pc + 1, opCode.name());
                 // 打印栈
-                printStack(this);
+                for (int k = 1; k <= getTop(); k++) {
+                    LuaType t = type(k);
+                    switch (t) {
+                        case LUA_TBOOLEAN:
+                            System.out.printf("[%b]", toBoolean(k));
+                            break;
+                        case LUA_TNUMBER:
+                            if (isInteger(k)) {
+                                System.out.printf("[%d]", toInteger(k));
+                            } else {
+                                System.out.printf("[%f]", toNumber(k));
+                            }
+                            break;
+                        case LUA_TSTRING:
+                            System.out.printf("[\"%s\"]", toString(k));
+                            break;
+                        default: // other values
+                            System.out.printf("[%s]", typeName(t));
+                            break;
+                    }
+                }
+                System.out.println();
             } else {
                 break;
             }
@@ -1958,27 +2132,6 @@ public class LuaStateImpl implements LuaState, LuaVM {
      * @param ls
      */
     private static void printStack(LuaState ls) {
-        for (int i = 1; i <= ls.getTop(); i++) {
-            LuaType t = ls.type(i);
-            switch (t) {
-                case LUA_TBOOLEAN:
-                    System.out.printf("[%b]", ls.toBoolean(i));
-                    break;
-                case LUA_TNUMBER:
-                    if (ls.isInteger(i)) {
-                        System.out.printf("[%d]", ls.toInteger(i));
-                    } else {
-                        System.out.printf("[%f]", ls.toNumber(i));
-                    }
-                    break;
-                case LUA_TSTRING:
-                    System.out.printf("[\"%s\"]", ls.toString(i));
-                    break;
-                default: // other values
-                    System.out.printf("[%s]", ls.typeName(t));
-                    break;
-            }
-        }
-        System.out.println();
+
     }
 }

@@ -14,6 +14,12 @@ import static com.ywh.jua.api.LuaType.*;
  */
 class LuaValue {
 
+    /**
+     * 判断 Lua 数据类型
+     *
+     * @param val
+     * @return
+     */
     static LuaType typeOf(Object val) {
         if (val == null) {
             return LUA_TNIL;
@@ -27,6 +33,8 @@ class LuaValue {
             return LUA_TTABLE;
         } else if (val instanceof Closure) {
             return LUA_TFUNCTION;
+        } else if (val instanceof LuaStateImpl) {
+            return LUA_TTHREAD;
         }
         else {
             throw new RuntimeException("TODO");

@@ -1,5 +1,7 @@
 package com.ywh.jua.api;
 
+import com.ywh.jua.state.LuaStateImpl;
+
 /**
  * 基础 API
  *
@@ -518,6 +520,84 @@ public interface LuaBasicAPI {
      */
     int error();
 
-
+    /**
+     * 把指定字符串转换为数值，推入栈中。
+     *
+     * @param s
+     * @return
+     */
     boolean stringToNumber(String s);
+
+    /**
+     * 创建线程
+     *
+     * @return
+     */
+    LuaStateImpl newThread();
+
+    /**
+     * 恢复协程
+     *
+     * @param from
+     * @param nArgs
+     * @return
+     */
+    ThreadStatus resume(LuaStateImpl from, int nArgs);
+
+    /**
+     * 挂起线程
+     *
+     * @param nResults
+     * @return
+     */
+    int yield(int nResults);
+
+    /**
+     * 查看栈顶协程状态
+     *
+     * @return
+     */
+    ThreadStatus status();
+
+    /**
+     *
+     * @return
+     */
+    boolean isYieldAble();
+
+    /**
+     *
+     * @param idx
+     * @return
+     */
+    LuaState toThread(int idx);
+
+    /**
+     *
+     *
+     * @param idx
+     * @return
+     */
+    boolean pushThread();
+
+    /**
+     *
+     * @param to
+     * @param n
+     */
+    void xMove(LuaStateImpl to, int n);
+
+    /**
+     * debug
+     *
+     * @return
+     */
+    boolean getStack();
+
+    /**
+     * 判断是否主线程
+     *
+     * @return
+     */
+    boolean isMainThread();
 }

@@ -2,8 +2,6 @@ package com.ywh.jua;
 
 import com.google.gson.GsonBuilder;
 import com.ywh.jua.api.LuaState;
-import com.ywh.jua.api.LuaType;
-import com.ywh.jua.api.LuaVM;
 import com.ywh.jua.api.ThreadStatus;
 import com.ywh.jua.chunk.LocVar;
 import com.ywh.jua.chunk.Prototype;
@@ -14,18 +12,15 @@ import com.ywh.jua.compiler.lexer.Token;
 import com.ywh.jua.compiler.lexer.TokenKind;
 import com.ywh.jua.compiler.parser.Parser;
 import com.ywh.jua.state.LuaStateImpl;
-import com.ywh.jua.vm.Instruction;
 import com.ywh.jua.vm.OpCode;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static com.ywh.jua.api.LuaType.LUA_TNIL;
 import static com.ywh.jua.api.ThreadStatus.LUA_OK;
-import static com.ywh.jua.chunk.BinaryChunk.isBinaryChunk;
-import static com.ywh.jua.chunk.BinaryChunk.undump;
-import static com.ywh.jua.compiler.Compiler.compile;
 import static com.ywh.jua.compiler.lexer.TokenKind.*;
 import static com.ywh.jua.vm.Instruction.*;
 import static com.ywh.jua.vm.OpArgMask.*;
@@ -41,12 +36,14 @@ public class Main {
      * @throws Exception
      */
     public static void main(String[] args) throws IOException {
-
-        String fileName = "C:\\Project\\other-project\\jua\\test.lua";
+        String fileName = "G:\\demo\\jua\\test.lua";
+        if (args.length <= 0 || !new File(args[0]).exists()) {
+            throw new RuntimeException("file is not exist!");
+        }
 
         LuaStateImpl ls = new LuaStateImpl();
         ls.openLibs();
-        ls.loadFile(fileName);
+        ls.loadFile(args[0]);
         ls.call(0, -1);
 
 //        if (args.length > 0) {
