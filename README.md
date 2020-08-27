@@ -16,29 +16,28 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 
 ## Features
 
-- [x] Virtual Machine: (Instruction Set & Runner)
-- [x] Compiler: Lexer, AST Parser & Code Generator
-- [x] Standard Libraries
-    - [x] basic library
-    - [x] [mathematical functions](#Math)
-    - [x] [string manipulation](#String)
-    - [ ] table manipulation
-    - [ ] operating system facilities
-    - [x] [package library](#Modules)
-- [x] Metaprogramming
+- Virtual Machine: (Instruction Set & Runner)
+- Compiler: Lexer, AST Parser & Code Generator
+- Standard Libraries: 
+    - [basic library](#Basic)
+    - [mathematical functions](#Math)
+    - [string manipulation](#String)
+    - [package library](#Modules)
+- Metaprogramming
 
 ## ToDoList
 
-- Garbage Collector
-
-- label & goto statement
-- Userdata
-- Coroutines
-- Standard Libraries
-    - input and output
-    - basic UTF-8 support
-    - debug facilities
-    - ...
+- [ ] Label & Goto statement
+- [ ] Userdata
+- [ ] Coroutines Support
+- [ ] Garbage Collector
+- [ ] Standard Libraries: 
+    - [ ] input and output
+    - [ ] basic UTF-8 support
+    - [ ] debug facilities
+    - [ ] table manipulation
+    - [ ] operating system facilities
+    - [ ] coroutine library
 
 <!--
 
@@ -99,6 +98,32 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 ## Standard Libraries
 
 [Lua 5.3 Reference Manual](http://www.lua.org/manual/5.3/manual.html)
+
+### <span id="Basic">Basic</span>
+
+| No.  | Function     | Synopsis                                    |
+| ---- | ------------ | ------------------------------------------- |
+| 0    | print        | print (···)                                 |
+| 1    | assert       | assert (v [, message])                      |
+| 2    | error        | error (message [, level])                   |
+| 3    | select       | select (index, ···)                         |
+| 4    | ipairs       | ipairs (t)                                  |
+| 5    | pairs        | pairs (t)                                   |
+| 6    | next         | next (table [, index])                      |
+| 7    | load         | load (chunk [, chunkname [, mode [, env]]]) |
+| 8    | loadfile     | loadfile ([filename [, mode [, env]]])      |
+| 9    | dofile       | dofile ([filename])                         |
+| 10   | pcall        | pcall (f [, arg1, ···])                     |
+| 11   | xpcall       | xpcall (f, msgh [, arg1, ···])              |
+| 12   | getmetatable | getmetatable (object)                       |
+| 13   | setmetatable | setmetatable (table, metatable)             |
+| 14   | rawequal     | rawequal (v1, v2)                           |
+| 15   | rawlen       | rawlen (v)                                  |
+| 16   | rawget       | rawget (table, index)                       |
+| 17   | rawset       | rawset (table, index, value)                |
+| 18   | type         | type (v)                                    |
+| 19   | tostring     | tostring (v)                                |
+| 20   | tonumber     | tonumber (e [, base])                       |
 
 ### <span id="Math">Math</span>
 
