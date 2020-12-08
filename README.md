@@ -18,11 +18,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 
 - Virtual Machine: (Instruction Set & Runner)
 - Compiler: Lexer, AST Parser & Code Generator
-- Standard Libraries: 
-    - [basic library](#Basic)
-    - [mathematical functions](#Math)
-    - [string manipulation](#String)
-    - [package library](#Modules)
+- Standard Libraries
 - Metaprogramming
 
 ## ToDoList
@@ -32,12 +28,18 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 - [ ] Coroutines Support
 - [ ] Garbage Collector
 - [ ] Standard Libraries: 
+    - [x] [basic library](#Basic)
+    - [x] [mathematical functions](#Math)
+    - [x] [string manipulation](#String)
+    - [x] [package library](#Modules)
     - [ ] input and output
     - [ ] basic UTF-8 support
     - [ ] debug facilities
     - [ ] table manipulation
     - [ ] operating system facilities
     - [ ] coroutine library
+- [ ] REPL
+- Other interesting features
 
 <!--
 
