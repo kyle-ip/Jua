@@ -27,7 +27,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 - [ ] Userdata
 - [ ] Coroutines Support
 - [ ] Garbage Collector
-- [ ] Standard Libraries: 
+- [x] Standard Libraries: 
     - [x] [basic library](#Basic)
     - [x] [mathematical functions](#Math)
     - [x] [string manipulation](#String)
@@ -39,7 +39,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
     - [ ] operating system facilities
     - [ ] coroutine library
 - [ ] REPL
-- Other interesting features
+- [ ] Other interesting features
 
 <!--
 
