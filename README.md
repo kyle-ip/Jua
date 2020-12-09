@@ -216,9 +216,7 @@ print(sum())
 ### Run
 
 ```shell
-java -jar jua-1.0-SNAPSHOT.jar sum.lua
-```
-```
+$ java -jar jua-5.3.5-alpha.jar sum.lua
 
              ,---._
            .-- -.' \
@@ -236,12 +234,7 @@ java -jar jua-1.0-SNAPSHOT.jar sum.lua
       "---....--'                   `--`---'
             :: jua ::       (5.3.5-alpha)
 
-
 338.048
-```
-
-```shell
-java -jar jua -version
 ```
 
 ## Links
