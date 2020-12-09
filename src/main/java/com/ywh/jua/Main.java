@@ -31,7 +31,7 @@ public class Main {
             "    \\    \\         ; :  ,      .-./;  :  |..'  \\ \n" +
             "     \\    \\      ,'   `--`----'    |  ,     .-./ \n" +
             "      \"---....--'                   `--`---'     \n" +
-            "            :: jua ::       (5.3.5-alpha)\n"
+            "    :: jua ::                      (5.3.5-alpha)\n"
         );
 
         if (args.length <= 0 || !new File(args[0]).exists()) {
