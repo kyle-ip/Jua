@@ -1,4 +1,6 @@
 # Jua
+![Jua](https://ywh-oss.oss-cn-shenzhen.aliyuncs.com/Jua-2.png) 
+
 
 [![Java](https://img.shields.io/badge/language-Java-green.svg)]()
 [![lua](https://img.shields.io/badge/language-lua-blue.svg)]()
@@ -214,9 +216,30 @@ print(sum())
 ```shell
 java -jar jua-1.0-SNAPSHOT.jar sum.lua
 ```
-
 ```
+
+             ,---._
+           .-- -.' \
+           |    |   :
+           |    |   |         ,--,
+           |    |   |       ,'_ /|
+           |    |   |  .--. |  | :    ,--.--.
+           |    |   |,'_ /| :  . |   /       \
+           |    |   ||  ' | |  . .  .--.  .-. |
+       ___ |    |   ||  | ' |  | |   \__\/| . .
+     /    /\    |   ||  | : ;  ; |   ," .--.; |
+    /  ../  `..-    ,|  |  `--'   \ /  /  ,.  |
+    \    \         ; :  ,      .-./;  :  |..'  \
+     \    \      ,'   `--`----'    |  ,     .-./
+      "---....--'                   `--`---'
+            :: jua ::       (5.3.5-alpha)
+
+
 338.048
+```
+
+```shell
+java -jar jua -version
 ```
 
 ## Links
