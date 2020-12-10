@@ -5,10 +5,6 @@
 [![Java](https://img.shields.io/badge/language-Java-green.svg)]()
 [![lua](https://img.shields.io/badge/language-lua-blue.svg)]()
 
-A simplified Lua written in Java.
-
-## Introduction
-
 Jua is a simplified Lua (5.3) implementation written in Java. The purpose of building this project is to learn:
 
 - Data Structure
