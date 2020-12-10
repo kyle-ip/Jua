@@ -19,7 +19,7 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 - Standard Libraries
 - Metaprogramming
 
-## ToDoList
+## To-Do List
 
 - [ ] Label & Goto statement
 - [ ] Userdata
