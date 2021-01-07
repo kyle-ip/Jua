@@ -5,8 +5,10 @@
 [![Java](https://img.shields.io/badge/language-Java-green.svg)]()
 [![lua](https://img.shields.io/badge/language-lua-blue.svg)]()
 
-Jua is a simplified Lua (5.3) implementation written in Java. The purpose of building this project is to learn:
+Jua is a simplified Lua (5.3) implementation written in Java. 
 
+
+The purpose of building this project is to learn:
 - Data Structure
 - Register-based Virtual Machine & Instruction Set Design
 - Compilers
@@ -187,13 +189,13 @@ Jua is a simplified Lua (5.3) implementation written in Java. The purpose of bui
 - JDK 1.8+
 - Maven 3+ 
 
-### Build
+### Build Project
 
 ```shell
 mvn clean package
 ```
 
-### Script
+### Write and Run Script 
 
 sum.lua
 ```lua
@@ -208,8 +210,6 @@ function sum()
 end
 print(sum())
 ```
-
-### Run
 
 ```shell
 $ java -jar jua-5.3.5-alpha.jar sum.lua
