@@ -1,5 +1,5 @@
 # Jua
-![Jua](https://ywh-oss.oss-cn-shenzhen.aliyuncs.com/Jua-2.png) 
+<!-- ![Jua](https://ywh-oss.oss-cn-shenzhen.aliyuncs.com/Jua-2.png) -->
 
 
 [![Java](https://img.shields.io/badge/language-Java-green.svg)]()
