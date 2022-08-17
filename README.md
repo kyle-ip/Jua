@@ -13,7 +13,7 @@ The purpose of building this project is to learn:
 - Data Structure
 - Register-based Virtual Machine & Instruction Set Design
 - Compilers
-- Lua grammar & Standard Libraries
+- Lua & Standard Libraries
 
 ## Features
 
